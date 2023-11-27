@@ -1,6 +1,8 @@
 package udppeer
 
 import (
+	"fmt"
+	"log"
 	"net"
 )
 
@@ -56,11 +58,21 @@ func structToBytes(message RequestUDPExtension) []byte {
 func SendUdpRequest(RequestUDP RequestUDPExtension, adressPort string) (bool, error) {
 	structTobytes := structToBytes(RequestUDP)
 	udpAddr, err := net.ResolveUDPAddr("udp", adressPort)
+	if err != nil {
+		fmt.Println("ResolveUDPAddr error : ")
+		log.Fatal(err)
+	}
 	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
+	if err != nil {
+		fmt.Println("ListenUDP error : ")
+		log.Fatal(err)
+	}
 	count, err := connUdp.WriteToUDP(structTobytes, udpAddr)
+	if err != nil {
+		fmt.Println("WriteToUDP error : ")
+		log.Fatal(err)
+	}
 
-	/**
-	Se souvenir qu'on a envoyé un packet donc attendre sa reponse
-	*/
-	return count != len(structTobytes), err
+	// verifier que le nbr caracter envoyé = taille structure
+	return count == len(structTobytes), err
 }

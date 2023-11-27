@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"projet-protocoles-internet/restpeer"
+	"projet-protocoles-internet/udppeer"
 	"time"
 )
 
@@ -28,10 +29,10 @@ func main() {
 	listeOfPeer := restpeer.GetListOfPeers(client, restpeer.SendRestPeerNames(client))
 	fmt.Println(listeOfPeer)
 	/* Client test pour REST API */
-
-	/*udppeer.SendHello()
-	tableau := listenActive()
-	fmt.Println(tableau)*/
+	udppeer.SendHello(listeOfPeer.ListOfPeers[0].AddressIpv4 + ":" + listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
+	/*
+		tableau := listenActive()
+		fmt.Println(tableau)*/
 	fmt.Println("Fin du programme")
 
 }

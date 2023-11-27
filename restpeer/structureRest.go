@@ -1,13 +1,13 @@
 package restpeer
 
 type ListOfPeers struct {
-	listOfPeers []PeersUser
+	ListOfPeers []PeersUser
 	Length      int16
 }
 
 type PeersUser struct {
-	nameUser    string
-	addressIpv6 string
-	addressIpv4 string
-	port        string
+	NameUser    string
+	AddressIpv6 string
+	AddressIpv4 string
+	Port        string
 }

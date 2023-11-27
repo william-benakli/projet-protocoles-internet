@@ -6,21 +6,27 @@ import "fmt"
 	UdpCommands
 */
 
-func SendHello() {
+var globalID int32
+
+func InitId() {
+	globalID = 0
+}
+
+func SendHello(port string) {
 
 	/* Packer hello  */
 	helloUpdStruct := RequestUDPExtension{
-		Id:     43234,
+		Id:     globalID,
 		Type:   2,
 		Length: 0,
 		Body:   make([]byte, 0),
 	}
-	isSend, err := SendUdpRequest(helloUpdStruct, "")
+	globalID += 1
+	isSend, err := SendUdpRequest(helloUpdStruct, port)
 
 	if err != nil {
 		fmt.Print("Erreur SendUdpRequest", string(err.Error()))
 	}
-
 	if isSend {
 		fmt.Println("Packet envoyé ")
 	}
