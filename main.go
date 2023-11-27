@@ -10,17 +10,18 @@ import (
 	"time"
 )
 
+var tableau []string
+
 func main() {
 
 	/* Client test pour REST API */
-
 	transport := &*http.DefaultTransport.(*http.Transport)
 	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{
 		Transport: transport,
 		Timeout:   50 * time.Second,
 	}
-
+	udppeer.InitId()
 	fmt.Println("-------- appel au fonction ------------ ")
 	fmt.Println(restpeer.SendRestPeerNames(client))
 	fmt.Println(restpeer.SendRestPeerAdresses(client, "jch.irif.fr"))
@@ -29,31 +30,36 @@ func main() {
 	listeOfPeer := restpeer.GetListOfPeers(client, restpeer.SendRestPeerNames(client))
 	fmt.Println(listeOfPeer)
 	/* Client test pour REST API */
+	channel := make(chan string)
+	go listenActive(channel)
 	udppeer.SendHello(listeOfPeer.ListOfPeers[0].AddressIpv4 + ":" + listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
-	/*
-		tableau := listenActive()
-		fmt.Println(tableau)*/
-	fmt.Println("Fin du programme")
-
+	for {
+		msg, ok := <-channel // Receiving a message from the channel
+		if !ok {
+			fmt.Println("Channel closed. Exiting receiver.")
+			return
+		}
+		fmt.Println("Received:", msg)
+	}
 }
 
-func listenActive() []string {
-	connUdp, err := net.ListenUDP("udppeer", &net.UDPAddr{})
-	tableau := make([]string, 5)
-
-	for compteur := 0; compteur < 10; compteur++ {
+func listenActive(ch chan string) {
+	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
+	for {
 		if err != nil {
 			fmt.Println("erreur listen not working")
 		}
-		maxRequest := make([]byte, 32*7)
-		n, _, err := connUdp.ReadFromUDP(maxRequest)
+
+		maxRequest := make([]byte, 12)
+		ch <- fmt.Sprintf("avant")
+
+		n, _, _ := connUdp.ReadFromUDP(maxRequest)
+		ch <- fmt.Sprintf("apres")
+
 		if n != len(maxRequest) {
 			fmt.Println("Pas toutes les bits")
 		}
-		if err != nil {
-			fmt.Println("Erreur ReadFromUDP")
-		}
-		tableau = append(tableau, string(maxRequest))
+
+		ch <- fmt.Sprintf(string(maxRequest))
 	}
-	return tableau
 }

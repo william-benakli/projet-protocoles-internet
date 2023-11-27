@@ -19,7 +19,7 @@ type RequestUDPExtension struct {
 	Length     int16
 	Body       []byte
 	Extensions []byte
-	Name       []byte
+	Name       string
 	Signature  []byte
 }
 
@@ -30,7 +30,7 @@ func byteToStruct(bytes []byte) RequestUDPExtension {
 		Type:       int8(bytes[4]),
 		Body:       make([]byte, 100),
 		Extensions: nil,
-		Name:       nil,
+		Name:       "",
 		Signature:  nil,
 	}
 
@@ -41,7 +41,7 @@ func byteToStruct(bytes []byte) RequestUDPExtension {
 }
 
 func structToBytes(message RequestUDPExtension) []byte {
-	msg := make([]byte, 7+message.Length)
+	msg := make([]byte, 12)
 	msg[0] = byte(message.Id >> 24)
 	msg[1] = byte(message.Id >> 16)
 	msg[2] = byte(message.Id >> 8)
@@ -52,10 +52,12 @@ func structToBytes(message RequestUDPExtension) []byte {
 	for i := 0; i < int(message.Length); i++ {
 		msg[7+i] = message.Body[i]
 	}
+	// msg[11] = []byte(message.Name)
 	return msg
 }
 
 func SendUdpRequest(RequestUDP RequestUDPExtension, adressPort string) (bool, error) {
+	fmt.Println(adressPort)
 	structTobytes := structToBytes(RequestUDP)
 	udpAddr, err := net.ResolveUDPAddr("udp", adressPort)
 	if err != nil {
@@ -72,7 +74,7 @@ func SendUdpRequest(RequestUDP RequestUDPExtension, adressPort string) (bool, er
 		fmt.Println("WriteToUDP error : ")
 		log.Fatal(err)
 	}
-
+	fmt.Println(structTobytes)
 	// verifier que le nbr caracter envoyé = taille structure
 	return count == len(structTobytes), err
 }

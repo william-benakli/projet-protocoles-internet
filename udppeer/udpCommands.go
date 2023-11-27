@@ -9,7 +9,7 @@ import "fmt"
 var globalID int32
 
 func InitId() {
-	globalID = 0
+	globalID = 4553
 }
 
 func SendHello(port string) {
@@ -20,6 +20,7 @@ func SendHello(port string) {
 		Type:   2,
 		Length: 0,
 		Body:   make([]byte, 0),
+		Name:   "ChachaBG",
 	}
 	globalID += 1
 	isSend, err := SendUdpRequest(helloUpdStruct, port)
