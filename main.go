@@ -32,7 +32,7 @@ func main() {
 	/* Client test pour REST API */
 	channel := make(chan string)
 	go listenActive(channel)
-	udppeer.SendHello(listeOfPeer.ListOfPeers[0].AddressIpv4 + ":" + listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
+	go udppeer.SendHello(listeOfPeer.ListOfPeers[0].AddressIpv4 + ":" + listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
 	for {
 		msg, ok := <-channel // Receiving a message from the channel
 		if !ok {
@@ -45,21 +45,23 @@ func main() {
 
 func listenActive(ch chan string) {
 	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
+	if err != nil {
+		fmt.Println("Erreur lors de la création de la connexion UDP :", err)
+		return
+	}
+	maxRequest := make([]byte, 50)
 	for {
+		ch <- "avant"
+		n, _, err := connUdp.ReadFromUDP(maxRequest)
+		ch <- "apres"
 		if err != nil {
-			fmt.Println("erreur listen not working")
+			fmt.Println("Erreur lors de la lecture UDP :", err)
+			return
 		}
-
-		maxRequest := make([]byte, 12)
-		ch <- fmt.Sprintf("avant")
-
-		n, _, _ := connUdp.ReadFromUDP(maxRequest)
-		ch <- fmt.Sprintf("apres")
-
 		if n != len(maxRequest) {
-			fmt.Println("Pas toutes les bits")
+			fmt.Println("Pas tous les bits lus")
 		}
 
-		ch <- fmt.Sprintf(string(maxRequest))
+		ch <- string(maxRequest[:n])
 	}
 }

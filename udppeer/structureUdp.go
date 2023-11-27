@@ -41,7 +41,7 @@ func byteToStruct(bytes []byte) RequestUDPExtension {
 }
 
 func structToBytes(message RequestUDPExtension) []byte {
-	msg := make([]byte, 12)
+	msg := make([]byte, 50)
 	msg[0] = byte(message.Id >> 24)
 	msg[1] = byte(message.Id >> 16)
 	msg[2] = byte(message.Id >> 8)
@@ -52,7 +52,7 @@ func structToBytes(message RequestUDPExtension) []byte {
 	for i := 0; i < int(message.Length); i++ {
 		msg[7+i] = message.Body[i]
 	}
-	// msg[11] = []byte(message.Name)
+	copy(msg[11:], []byte(message.Name))
 	return msg
 }
 

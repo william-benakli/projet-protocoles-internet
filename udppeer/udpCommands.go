@@ -9,7 +9,7 @@ import "fmt"
 var globalID int32
 
 func InitId() {
-	globalID = 4553
+	globalID = 3
 }
 
 func SendHello(port string) {
