@@ -1,3 +1,3 @@
 module projet-protocoles-internet
 
-go 1.23
+go 1.16.3

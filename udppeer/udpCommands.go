@@ -1,6 +1,9 @@
 package udppeer
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+)
 
 /*
 	UdpCommands
@@ -9,21 +12,21 @@ import "fmt"
 var globalID int32
 
 func InitId() {
-	globalID = 3
+	globalID = 5432345
 }
 
-func SendHello(port string) {
+func SendHello(connUdp *net.UDPConn, adresse string) {
 
 	/* Packer hello  */
 	helloUpdStruct := RequestUDPExtension{
-		Id:     globalID,
-		Type:   2,
-		Length: 0,
-		Body:   make([]byte, 0),
-		Name:   "ChachaBG",
+		Id:         globalID,
+		Type:       2,
+		Length:     1,
+		Extensions: 0,
+		Name:       "Aaaaabbb",
 	}
 	globalID += 1
-	isSend, err := SendUdpRequest(helloUpdStruct, port)
+	isSend, err := SendUdpRequest(connUdp, helloUpdStruct, adresse)
 
 	if err != nil {
 		fmt.Print("Erreur SendUdpRequest", string(err.Error()))

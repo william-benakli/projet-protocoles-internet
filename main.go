@@ -30,30 +30,40 @@ func main() {
 	listeOfPeer := restpeer.GetListOfPeers(client, restpeer.SendRestPeerNames(client))
 	fmt.Println(listeOfPeer)
 	/* Client test pour REST API */
-	channel := make(chan string)
-	go listenActive(channel)
-	go udppeer.SendHello(listeOfPeer.ListOfPeers[0].AddressIpv4 + ":" + listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
-	for {
-		msg, ok := <-channel // Receiving a message from the channel
-		if !ok {
-			fmt.Println("Channel closed. Exiting receiver.")
-			return
-		}
-		fmt.Println("Received:", msg)
-	}
-}
+	channel := make(chan []byte)
 
-func listenActive(ch chan string) {
 	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
 	if err != nil {
 		fmt.Println("Erreur lors de la création de la connexion UDP :", err)
 		return
 	}
-	maxRequest := make([]byte, 50)
+
+	go listenActive(channel, connUdp)
+
+	go udppeer.SendHello(connUdp, listeOfPeer.ListOfPeers[0].AddressIpv4+":"+listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
+
 	for {
-		ch <- "avant"
+		bytesReceive, ok := <-channel // Receiving a message from the channel
+		if !ok {
+			fmt.Println("Channel closed. Exiting receiver.")
+			return
+		}
+		receiveStruct := udppeer.ByteToStruct(bytesReceive)
+		fmt.Println("Received ID :", receiveStruct.Id)
+		fmt.Println("Received TYPE :", receiveStruct.Type)
+		fmt.Println("Received NAME :", receiveStruct.Name)
+		fmt.Println("Received LENGTH :", receiveStruct.Length)
+		fmt.Println("Received EXTENSION :", receiveStruct.Extensions)
+		fmt.Println("Received SIGNATURE:", receiveStruct.Signature)
+
+	}
+}
+
+func listenActive(ch chan []byte, connUdp *net.UDPConn) {
+
+	maxRequest := make([]byte, 32)
+	for {
 		n, _, err := connUdp.ReadFromUDP(maxRequest)
-		ch <- "apres"
 		if err != nil {
 			fmt.Println("Erreur lors de la lecture UDP :", err)
 			return
@@ -62,6 +72,6 @@ func listenActive(ch chan string) {
 			fmt.Println("Pas tous les bits lus")
 		}
 
-		ch <- string(maxRequest[:n])
+		ch <- maxRequest[:n]
 	}
 }
