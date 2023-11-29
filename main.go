@@ -31,7 +31,6 @@ func main() {
 	fmt.Println(listeOfPeer)
 	/* Client test pour REST API */
 	channel := make(chan []byte)
-
 	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
 	if err != nil {
 		fmt.Println("Erreur lors de la création de la connexion UDP :", err)
@@ -48,14 +47,18 @@ func main() {
 			fmt.Println("Channel closed. Exiting receiver.")
 			return
 		}
+
+		if bytesReceive == nil {
+			fmt.Println("Error closed. Exiting receiver.")
+		}
+
 		receiveStruct := udppeer.ByteToStruct(bytesReceive)
 		fmt.Println("Received ID :", receiveStruct.Id)
 		fmt.Println("Received TYPE :", receiveStruct.Type)
-		fmt.Println("Received NAME :", receiveStruct.Name)
+		fmt.Println("Received NAME :", string(receiveStruct.Name))
 		fmt.Println("Received LENGTH :", receiveStruct.Length)
 		fmt.Println("Received EXTENSION :", receiveStruct.Extensions)
-		fmt.Println("Received SIGNATURE:", receiveStruct.Signature)
-
+		fmt.Println(bytesReceive)
 	}
 }
 
@@ -66,12 +69,16 @@ func listenActive(ch chan []byte, connUdp *net.UDPConn) {
 		n, _, err := connUdp.ReadFromUDP(maxRequest)
 		if err != nil {
 			fmt.Println("Erreur lors de la lecture UDP :", err)
+			ch <- nil
+
 			return
 		}
 		if n != len(maxRequest) {
 			fmt.Println("Pas tous les bits lus")
+			ch <- nil
+			return
 		}
-
-		ch <- maxRequest[:n]
+		//ch <- "Données reçues : " + string(maxRequest[:n])
+		ch <- maxRequest
 	}
 }

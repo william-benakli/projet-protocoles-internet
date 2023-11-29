@@ -1,27 +1,18 @@
 package udppeer
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
 )
-
-type RequestUDP struct {
-	Id     int32
-	Type   int8
-	Length int16
-	Body   []byte
-}
 
 type RequestUDPExtension struct {
 	Id         int32
 	Type       int8
 	Length     int16
 	Extensions int32
-	Name       string
-	Signature  string
+	Name       []byte
+	//Signature  int8
 }
 
 /*
@@ -55,29 +46,55 @@ func structToBytes(requete RequestUDPExtension) []byte {
 
 func ByteToStruct(bytes []byte) RequestUDPExtension {
 	result := RequestUDPExtension{}
-	result.Id = int32(binary.LittleEndian.Uint32(bytes[0:4]))
+	result.Id = int32(bytes[0])*(1<<24) + (int32(bytes[1]) * (1 << 16)) + (int32(bytes[2]) * (1 << 8)) + int32(bytes[3])
 	result.Type = int8(bytes[4])
-	result.Length = int16(binary.LittleEndian.Uint16(bytes[5:7]))
-	result.Extensions = int32(binary.LittleEndian.Uint32(bytes[7:11]))
-	result.Name = string(bytes[11:15])
-	result.Signature = string(bytes[15:19])
+	result.Length = int16(bytes[5])*(1<<8) + int16(bytes[6])
+	result.Extensions = int32(bytes[7])*(1<<24) + (int32(bytes[8]) * (1 << 16)) + (int32(bytes[9]) * (1 << 8)) + int32(bytes[10])
+
+	result.Name = make([]byte, result.Length)
+	for i := 0; i < int(result.Length); i++ {
+		result.Name[i] = bytes[11+i]
+	}
 	return result
 }
 
-func StructToBytes(requete RequestUDPExtension) ([]byte, error) {
-	buffer := new(bytes.Buffer)
-	err := binary.Write(buffer, binary.LittleEndian, requete.Id)
-	err = binary.Write(buffer, binary.LittleEndian, requete.Type)
-	err = binary.Write(buffer, binary.LittleEndian, requete.Length)
-	err = binary.Write(buffer, binary.LittleEndian, requete.Extensions)
-	err = binary.Write(buffer, binary.LittleEndian, []byte(requete.Name))
-	err = binary.Write(buffer, binary.LittleEndian, []byte(requete.Signature))
-	return buffer.Bytes(), err
+func StructToBytes(requete RequestUDPExtension) []byte {
+	lenBuffer := 4 + 1 + 2 + 4 + requete.Length
+	buffer := make([]byte, lenBuffer)
+
+	buffer[0] = byte(requete.Id >> 24)
+	buffer[1] = byte(requete.Id >> 16)
+	buffer[2] = byte(requete.Id >> 8)
+	buffer[3] = byte(requete.Id)
+
+	buffer[4] = byte(requete.Type)
+	buffer[5] = byte(requete.Length >> 8)
+	buffer[6] = byte(requete.Length)
+	buffer[7] = byte(requete.Extensions >> 24)
+	buffer[8] = byte(requete.Extensions >> 16)
+	buffer[9] = byte(requete.Extensions >> 8)
+	buffer[10] = byte(requete.Extensions)
+	//copy(buffer[11:], requete.Name)
+
+	for i := 0; i < int(requete.Length); i++ {
+		buffer[11+i] = requete.Name[i]
+	}
+	fmt.Println(buffer, " BUFERRRRR PRINT")
+	return buffer
 }
 
 func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adressPort string) (bool, error) {
-	fmt.Println(adressPort)
-	structTobytes, err := StructToBytes(RequestUDP)
+	structToBytes := StructToBytes(RequestUDP)
+
+	fmt.Println("Bytes envoyés ")
+
+	receiveStruct := ByteToStruct(structToBytes)
+	fmt.Println("Received ID :", receiveStruct.Id)
+	fmt.Println("Received TYPE :", receiveStruct.Type)
+	fmt.Println("Received NAME :", string(receiveStruct.Name))
+	fmt.Println("Received LENGTH :", receiveStruct.Length)
+	fmt.Println("Received EXTENSION :", receiveStruct.Extensions)
+
 	udpAddr, err := net.ResolveUDPAddr("udp", adressPort)
 	if err != nil {
 		fmt.Println("ResolveUDPAddr error : ")
@@ -88,12 +105,12 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 		log.Fatal(err)
 	}
 
-	count, err := connUdp.WriteToUDP(structTobytes, udpAddr)
+	count, err := connUdp.WriteToUDP(structToBytes, udpAddr)
 	if err != nil {
 		fmt.Println("WriteToUDP error : ")
 		log.Fatal(err)
 	}
-	fmt.Println(structTobytes)
+	fmt.Println(structToBytes)
 	// verifier que le nbr caracter envoyé = taille structure
-	return count == len(structTobytes), err
+	return count == len(structToBytes), err
 }
