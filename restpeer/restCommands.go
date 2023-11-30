@@ -14,10 +14,10 @@ func getPeerStructFromStringTab(name string, userPeer []string) PeersUser {
 	addressIpv6 := strings.Replace(strings.Replace(strings.Split(userPeer[1], ":")[0], "[", "", -1), "]", "", -1)
 	port := strings.Split(userPeer[0], ":")[1]
 	fmt.Println(userPeer[0], " aaaa ")
-	peer.addressIpv4 = addressIpv4
-	peer.addressIpv6 = addressIpv6
-	peer.port = port
-	peer.nameUser = name
+	peer.AddressIpv4 = addressIpv4
+	peer.AddressIpv6 = addressIpv6
+	peer.Port = port
+	peer.NameUser = name
 	return peer
 
 }
@@ -30,7 +30,7 @@ func GetListOfPeers(client *http.Client, peersTableau []string) ListOfPeers {
 			infoPeers := SendRestPeerAdresses(client, peersTableau[i])
 			if len(infoPeers) > 1 && !strings.Contains(infoPeers[0], "404") {
 				fmt.Println(infoPeers[0], strings.Contains(infoPeers[0], "404 page not found "), " -------------- ")
-				listOfPeers.listOfPeers = append(listOfPeers.listOfPeers, getPeerStructFromStringTab(peersTableau[i], infoPeers))
+				listOfPeers.ListOfPeers = append(listOfPeers.ListOfPeers, getPeerStructFromStringTab(peersTableau[i], infoPeers))
 			} else {
 				fmt.Println(peersTableau[i], " a été ignoré car il a aucune ip associé")
 			}

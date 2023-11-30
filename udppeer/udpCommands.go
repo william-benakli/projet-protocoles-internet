@@ -1,40 +1,67 @@
 package udppeer
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+)
 
 /*
 	UdpCommands
 */
 
-func SendHello() {
+var globalID int32
 
-	/* Packer hello  */
+func InitId() {
+	globalID = 5432345
+}
+
+func SendHello(connUdp *net.UDPConn, adresse string) {
+
+	namePeer := "BOulangerPatissierEtFiereDeLetre"
 	helloUpdStruct := RequestUDPExtension{
-		Id:     43234,
-		Type:   2,
-		Length: 0,
-		Body:   make([]byte, 0),
+		Id:         globalID,
+		Type:       2,
+		Length:     int16(len(namePeer) + 4),
+		Extensions: 0,
+		Name:       []byte(namePeer),
 	}
-	isSend, err := SendUdpRequest(helloUpdStruct, "")
+	fmt.Println(helloUpdStruct.Length, "##################")
+	globalID += 1
+	isSend, err := SendUdpRequest(connUdp, helloUpdStruct, adresse)
 
 	if err != nil {
 		fmt.Print("Erreur SendUdpRequest", string(err.Error()))
 	}
-
 	if isSend {
 		fmt.Println("Packet envoyé ")
 	}
 
 }
 
-func sendPublicKey() {
+func SendPublicKey(connUdp *net.UDPConn, adresse string, id int32) {
+	helloUpdStruct := RequestUDPExtension{
+		Id:         id,
+		Type:       uint8(130),
+		Length:     0,
+		Extensions: 0,
+		Name:       []byte(""),
+	}
+	fmt.Println(helloUpdStruct.Length, "##################")
+	globalID += 1
+	isSend, err := SendUdpRequest(connUdp, helloUpdStruct, adresse)
+
+	if err != nil {
+		fmt.Print("Erreur SendUdpRequest", string(err.Error()))
+	}
+	if isSend {
+		fmt.Println("Packet envoyé ")
+	}
+}
+
+func SendRoot() {
 
 }
 
-func sendRoot() {
-
-}
-
-func sendGetDatum() {
+func SendGetDatum() {
 
 }
