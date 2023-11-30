@@ -74,11 +74,12 @@ func StructToBytes(requete RequestUDPExtension) []byte {
 	buffer[8] = byte(requete.Extensions >> 16)
 	buffer[9] = byte(requete.Extensions >> 8)
 	buffer[10] = byte(requete.Extensions)
-	//copy(buffer[11:], requete.Name)
+	copy(buffer[11:], requete.Name)
 
-	for i := 0; i < int(requete.Length); i++ {
-		buffer[11+i] = requete.Name[i]
-	}
+	// for i := 0; i < int(requete.Length); i++ {
+	// 	buffer[11+i] = requete.Name[i]
+	// 	fmt.Printf("%d , ", requete.Length)
+	// }
 	fmt.Println(buffer, " BUFERRRRR PRINT")
 	return buffer
 }

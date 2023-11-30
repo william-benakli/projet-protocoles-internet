@@ -17,11 +17,11 @@ func InitId() {
 
 func SendHello(connUdp *net.UDPConn, adresse string) {
 
-	namePeer := "Hello!"
+	namePeer := "BOulangerPatissierEtFiereDeLetre"
 	helloUpdStruct := RequestUDPExtension{
 		Id:         globalID,
 		Type:       2,
-		Length:     int16(len(namePeer)),
+		Length:     int16(len(namePeer) + 4),
 		Extensions: 0,
 		Name:       []byte(namePeer),
 	}

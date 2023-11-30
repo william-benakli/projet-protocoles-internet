@@ -85,6 +85,7 @@ func listenActive(ch chan []byte, connUdp *net.UDPConn, listeOfPeer restpeer.Lis
 		} else if receiveStruct.Type == 3 {
 			udppeer.SendPublicKey(connUdp, listeOfPeer.ListOfPeers[0].AddressIpv4+":"+listeOfPeer.ListOfPeers[0].Port, receiveStruct.Id) // need to give IP+":"+port
 		}
+		time.Sleep(15 * time.Second)
 		// ch <- maxRequest
 		//ch <- "Données reçues : " + string(maxRequest[:n])
 
