@@ -37,7 +37,7 @@ func main() {
 		return
 	}
 
-	go listenActive(channel, connUdp)
+	go listenActive(channel, connUdp, listeOfPeer)
 
 	go udppeer.SendHello(connUdp, listeOfPeer.ListOfPeers[0].AddressIpv4+":"+listeOfPeer.ListOfPeers[0].Port) // need to give IP+":"+port
 
@@ -51,7 +51,6 @@ func main() {
 		if bytesReceive == nil {
 			fmt.Println("Error closed. Exiting receiver.")
 		}
-
 		receiveStruct := udppeer.ByteToStruct(bytesReceive)
 		fmt.Println("Received ID :", receiveStruct.Id)
 		fmt.Println("Received TYPE :", receiveStruct.Type)
@@ -62,7 +61,7 @@ func main() {
 	}
 }
 
-func listenActive(ch chan []byte, connUdp *net.UDPConn) {
+func listenActive(ch chan []byte, connUdp *net.UDPConn, listeOfPeer restpeer.ListOfPeers) {
 
 	maxRequest := make([]byte, 32)
 	for {
@@ -73,12 +72,21 @@ func listenActive(ch chan []byte, connUdp *net.UDPConn) {
 
 			return
 		}
+
 		if n != len(maxRequest) {
 			fmt.Println("Pas tous les bits lus")
-			ch <- nil
-			return
+			// ch <- nil
+			// return
 		}
+		receiveStruct := udppeer.ByteToStruct(maxRequest)
+
+		if receiveStruct.Type == 129 { // a coriger
+			ch <- maxRequest
+		} else if receiveStruct.Type == 3 {
+			udppeer.SendPublicKey(connUdp, listeOfPeer.ListOfPeers[0].AddressIpv4+":"+listeOfPeer.ListOfPeers[0].Port, receiveStruct.Id) // need to give IP+":"+port
+		}
+		// ch <- maxRequest
 		//ch <- "Données reçues : " + string(maxRequest[:n])
-		ch <- maxRequest
+
 	}
 }

@@ -8,7 +8,7 @@ import (
 
 type RequestUDPExtension struct {
 	Id         int32
-	Type       int8
+	Type       uint8 // care changement a verifier!
 	Length     int16
 	Extensions int32
 	Name       []byte
@@ -47,7 +47,7 @@ func structToBytes(requete RequestUDPExtension) []byte {
 func ByteToStruct(bytes []byte) RequestUDPExtension {
 	result := RequestUDPExtension{}
 	result.Id = int32(bytes[0])*(1<<24) + (int32(bytes[1]) * (1 << 16)) + (int32(bytes[2]) * (1 << 8)) + int32(bytes[3])
-	result.Type = int8(bytes[4])
+	result.Type = uint8(bytes[4])
 	result.Length = int16(bytes[5])*(1<<8) + int16(bytes[6])
 	result.Extensions = int32(bytes[7])*(1<<24) + (int32(bytes[8]) * (1 << 16)) + (int32(bytes[9]) * (1 << 8)) + int32(bytes[10])
 
