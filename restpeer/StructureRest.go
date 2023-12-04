@@ -7,6 +7,7 @@ type ListOfPeers struct {
 
 type PeersUser struct {
 	NameUser    string
+	NameLen     int16
 	AddressIpv6 string
 	AddressIpv4 string
 	Port        string
