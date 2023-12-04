@@ -25,11 +25,11 @@ func main() {
 
 	udppeer.InitId()
 
-	fmt.Println("Connexion REST API terminée")
+	var PeerSingleton restpeer.PeersUser
+	PeerSingleton.NameUser = "CharlyWilly"
+	PeerSingleton.NameLen = int16(len(PeerSingleton.NameUser))
 
-	var peerSingleton restpeer.PeersUser
-	peerSingleton.NameUser = "CharlyWilly"
-	peerSingleton.NameLen = int16(len(peerSingleton.NameUser))
+	fmt.Println("Connexion REST API terminée")
 
 	ServeurPeer, err := restpeer.GetMasterAddresse(client, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
@@ -48,16 +48,20 @@ func main() {
 }
 
 func startClient(channel chan []byte, connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
+	//Tout d'abord on écoute
+	go udppeer.ListenActive(connUdp, channel)
 
+	//on envoie Hello
 	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.AddressIpv4+":"+ServeurPeer.Port)
 	if err != nil {
 		return
 	}
-	if !request {
-		fmt.Println("Erreur premier Hello n'a pas été envoyé fin du programme")
-	} else {
-		udppeer.ListenActive(connUdp, channel)
-		go udppeer.MaintainConnexion(connUdp, ServeurPeer)
+	if request {
+		//si tout c bien passé on envoie la suite des requetes et on reste connecté au serveur
 		go udppeer.SendUDPPacketFromResponse(connUdp, channel)
+		udppeer.MaintainConnexion(connUdp, ServeurPeer)
+	} else {
+		fmt.Println("La requête Hello n'a pas été envoyé...")
+		fmt.Println("Fin du programme")
 	}
 }

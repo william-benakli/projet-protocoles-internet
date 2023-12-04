@@ -13,6 +13,8 @@ func SendUDPPacket() {
 
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 	for {
+		fmt.Println("SendUDPPacketFromResponse ")
+
 		bytesReceive, ok := <-channel
 		if !ok {
 			fmt.Println("Channel closed. Exiting receiver.")
@@ -22,31 +24,39 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 		if bytesReceive == nil {
 			fmt.Println("Error closed. Exiting receiver.")
 		}
+
 		receiveStruct := ByteToStruct(bytesReceive)
 		PrintRequest(receiveStruct)
 
 		/* Ici gerer le cas d'erreur */
 
-		addressesOfPeer := restpeer.GetAdrFromNamePeers(receiveStruct.Name)
+		//addressesOfPeer := restpeer.GetAdrFromNamePeers(receiveStruct.Name)
+		//TODO changer "81.194.27.155:8443" par l'adresses du pair avec qui on discute
+		//pour ça le recuperer dans une la liste ou le faire passer par la structure
 		var request bool
 		var err error
 
 		switch receiveStruct.Type {
 
-		case HelloReply:
-			request, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), addressesOfPeer)
-		case HelloRequest:
-			request, err = SendUdpRequest(connUdp, GetRequet(HelloReply, globalID), addressesOfPeer)
-		case GetDatumRequest:
-			request, err = SendUdpRequest(connUdp, GetRequet(Datum, globalID), addressesOfPeer)
 		case PublicKeyRequest:
-			request, err = SendUdpRequest(connUdp, GetRequet(PublicKeyReply, globalID), addressesOfPeer)
+			fmt.Println("Envoie PublicKeyRequest")
+			request, err = SendUdpRequest(connUdp, GetRequet(PublicKeyReply, receiveStruct.Id), "81.194.27.155:8443")
 		case RootRequest:
-			request, err = SendUdpRequest(connUdp, GetRequet(RootReply, globalID), addressesOfPeer)
+			fmt.Println("Envoie RootReply ")
+			request, err = SendUdpRequest(connUdp, GetRequet(RootReply, globalID), "81.194.27.155:8443")
+
+		case HelloReply:
+			request, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443")
+		case HelloRequest:
+			request, err = SendUdpRequest(connUdp, GetRequet(HelloReply, globalID), "81.194.27.155:8443")
+
+		case GetDatumRequest:
+			request, err = SendUdpRequest(connUdp, GetRequet(Datum, globalID), "81.194.27.155:8443")
+
 		}
 
 		if err != nil {
-			return
+			fmt.Println("Il y'a une erreur")
 		}
 
 		if request {
@@ -59,11 +69,13 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 }
 
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
-	for tick := range time.Tick(30 * time.Second) {
+	for tick := range time.Tick(25 * time.Second) {
+		fmt.Println("MaintainConnexion : Envoie de hello")
 		_, err := SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), string(ServeurPeer.AddressIpv4+":"+ServeurPeer.Port))
 		if err != nil {
 			return
 		}
-		fmt.Println(tick)
+		fmt.Println(tick, " Envoie pour maintenir la connexion ")
 	}
+
 }

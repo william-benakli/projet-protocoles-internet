@@ -105,5 +105,6 @@ func SendRestPeerAdresses(client *http.Client, namePeer string) []string {
 
 func GetAdrFromNamePeers(userName []byte) string {
 	var user PeersUser
+
 	return user.AddressIpv4 + ":" + user.Port
 }

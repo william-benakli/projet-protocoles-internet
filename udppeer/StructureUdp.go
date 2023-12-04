@@ -84,6 +84,7 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 }
 
 func PrintRequest(requestUdp RequestUDPExtension) {
+	fmt.Println("----------")
 	fmt.Println("Received ID :", requestUdp.Id)
 	fmt.Println("Received TYPE :", requestUdp.Type)
 	fmt.Println("Received NAME :", string(requestUdp.Name))
