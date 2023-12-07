@@ -8,19 +8,28 @@ import (
 	"strings"
 )
 
+/* Private fonction */
 func getPeerStructFromStringTab(name string, userPeer []string) PeersUser {
 	var peer PeersUser
-	addressIpv4 := strings.Split(userPeer[0], ":")[0]
-	addressIpv6 := strings.Replace(strings.Replace(strings.Split(userPeer[1], ":")[0], "[", "", -1), "]", "", -1)
-	port := strings.Split(userPeer[0], ":")[1]
-	fmt.Println(userPeer[0], " aaaa ")
-	peer.AddressIpv4 = addressIpv4
-	peer.AddressIpv6 = addressIpv6
-	peer.Port = port
+	peer.Port = strings.Split(userPeer[0], ":")[1]
+
+	for i := 0; i < len(userPeer); i++ {
+		if strings.HasPrefix(userPeer[i], "[") {
+			//IPV6
+			addressIp := strings.Replace(strings.Replace(strings.Split(userPeer[i], "]:")[0], "[", "", -1), "]", "", -1)
+			peer.ListOfAddresses = append(peer.ListOfAddresses, addressIp)
+		} else {
+			//IPV4
+			addressIp := strings.Split(userPeer[i], ":")[0]
+			peer.ListOfAddresses = append(peer.ListOfAddresses, addressIp)
+		}
+	}
 	peer.NameUser = name
 	return peer
 
 }
+
+/* public fonction */
 
 func GetListOfPeers(client *http.Client, peersTableau []string) ListOfPeers {
 	var listOfPeers ListOfPeers
@@ -41,9 +50,7 @@ func GetListOfPeers(client *http.Client, peersTableau []string) ListOfPeers {
 	return listOfPeers
 }
 
-/* Rendre ça générique */
-
-func SendRestPeerNames(client *http.Client) []string {
+func GetRestPeerNames(client *http.Client) []string {
 	resp, err := client.Get("https://jch.irif.fr:8443/peers/")
 
 	if err != nil {
@@ -76,9 +83,18 @@ func GetMasterAddresse(client *http.Client, url string) (PeersUser, error) {
 	var pair PeersUser
 	ipv4Ipv6 := strings.Split(string(body), "\n")
 	pair.Port = strings.Split(ipv4Ipv6[0], ":")[1]
-	pair.AddressIpv4 = strings.Split(ipv4Ipv6[0], ":")[0]
-	adrv6 := strings.Split(ipv4Ipv6[1], "]")[0]
-	pair.AddressIpv6 = strings.ReplaceAll(adrv6, "[", "")
+
+	for i := 0; i < len(ipv4Ipv6); i++ {
+		if strings.HasPrefix(ipv4Ipv6[i], "[") {
+			//IPV6
+			addressIp := strings.Replace(strings.Replace(strings.Split(ipv4Ipv6[i], "]:")[0], "[", "", -1), "]", "", -1)
+			pair.ListOfAddresses = append(pair.ListOfAddresses, addressIp)
+		} else {
+			//IPV4
+			addressIp := strings.Split(ipv4Ipv6[i], ":")[0]
+			pair.ListOfAddresses = append(pair.ListOfAddresses, addressIp)
+		}
+	}
 
 	return pair, err
 }
@@ -103,8 +119,9 @@ func SendRestPeerAdresses(client *http.Client, namePeer string) []string {
 	}
 }
 
+// TODO: à finir
 func GetAdrFromNamePeers(userName []byte) string {
 	var user PeersUser
 
-	return user.AddressIpv4 + ":" + user.Port
+	return user.ListOfAddresses[0] + ":" + user.Port
 }

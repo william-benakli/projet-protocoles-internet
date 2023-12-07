@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-func SendUDPPacket() {
-
-}
-
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 	for {
 		fmt.Println("SendUDPPacketFromResponse ")
@@ -43,7 +39,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			request, err = SendUdpRequest(connUdp, GetRequet(PublicKeyReply, receiveStruct.Id), "81.194.27.155:8443")
 		case RootRequest:
 			fmt.Println("Envoie RootReply ")
-			request, err = SendUdpRequest(connUdp, GetRequet(RootReply, globalID), "81.194.27.155:8443")
+			request, err = SendUdpRequest(connUdp, GetRequet(GetDatumRequest, globalID), "81.194.27.155:8443")
 
 		case HelloReply:
 			request, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443")
@@ -71,7 +67,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
 	for tick := range time.Tick(25 * time.Second) {
 		fmt.Println("MaintainConnexion : Envoie de hello")
-		_, err := SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), string(ServeurPeer.AddressIpv4+":"+ServeurPeer.Port))
+		_, err := SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), string(ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port))
 		if err != nil {
 			return
 		}

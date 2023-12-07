@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
+	"projet-protocoles-internet/webUI"
 	"time"
 )
 
@@ -40,6 +41,9 @@ func main() {
 
 	startClient(channel, connUdp, ServeurPeer)
 
+	/* Lancement du web UI Thread Principal */
+	webUI.SetupPage(client)
+
 	if err != nil {
 		fmt.Println("Erreur lors de la création de la connexion UDP :", err)
 		return
@@ -52,14 +56,14 @@ func startClient(channel chan []byte, connUdp *net.UDPConn, ServeurPeer restpeer
 	go udppeer.ListenActive(connUdp, channel)
 
 	//on envoie Hello
-	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.AddressIpv4+":"+ServeurPeer.Port)
+	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port)
 	if err != nil {
 		return
 	}
 	if request {
 		//si tout c bien passé on envoie la suite des requetes et on reste connecté au serveur
 		go udppeer.SendUDPPacketFromResponse(connUdp, channel)
-		udppeer.MaintainConnexion(connUdp, ServeurPeer)
+		go udppeer.MaintainConnexion(connUdp, ServeurPeer)
 	} else {
 		fmt.Println("La requête Hello n'a pas été envoyé...")
 		fmt.Println("Fin du programme")
