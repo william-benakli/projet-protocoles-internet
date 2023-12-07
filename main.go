@@ -40,6 +40,8 @@ func main() {
 	fmt.Println("Lancement des threads")
 
 	startClient(channel, connUdp, ServeurPeer)
+
+	/* Lancement du web UI Thread Principal */
 	webUI.SetupPage(client)
 
 	if err != nil {

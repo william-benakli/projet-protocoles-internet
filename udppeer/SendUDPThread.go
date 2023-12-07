@@ -67,7 +67,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
 	for tick := range time.Tick(25 * time.Second) {
 		fmt.Println("MaintainConnexion : Envoie de hello")
-		_, err := SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), string(ServeurPeer.AddressIpv4+":"+ServeurPeer.Port))
+		_, err := SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), string(ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port))
 		if err != nil {
 			return
 		}
