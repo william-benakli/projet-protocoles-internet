@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-func SendUDPPacket() {
-
-}
-
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 	for {
 		fmt.Println("SendUDPPacketFromResponse ")
@@ -43,7 +39,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			request, err = SendUdpRequest(connUdp, GetRequet(PublicKeyReply, receiveStruct.Id), "81.194.27.155:8443")
 		case RootRequest:
 			fmt.Println("Envoie RootReply ")
-			request, err = SendUdpRequest(connUdp, GetRequet(RootReply, globalID), "81.194.27.155:8443")
+			request, err = SendUdpRequest(connUdp, GetRequet(GetDatumRequest, globalID), "81.194.27.155:8443")
 
 		case HelloReply:
 			request, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443")
