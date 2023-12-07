@@ -31,7 +31,7 @@ func peersPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := `<!DOCTYPE html> <html> <head></head> <body> 
-		<div style="display: flex; flex-direction: rows; border: solid;">
+		<div style="display: flex; flex-direction: rows; justify-content: center; border: solid;">
 			<div style="border: solid;"> 
 			<h1> Pair connectés: </h1 
 			<p>` + peersList + `</p> 
