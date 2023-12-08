@@ -38,7 +38,7 @@ func GetRequet(codeCommands uint8, ID int32) RequestUDPExtension {
 	case RootRequest:
 		return NewRequestUDPExtension(ID, RootRequest, lenName, 0, name)
 	case RootReply:
-		return NewRequestUDPExtension(ID, RootReply, lenName, 0, name)
+		return NewRequestUDPExtension(ID, RootReply, 0, 0, []byte(""))
 
 	case GetDatumRequest:
 		return NewRequestUDPExtension(ID, GetDatumRequest, lenName, 0, name)

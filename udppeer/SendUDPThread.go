@@ -22,7 +22,6 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 		}
 
 		receiveStruct := ByteToStruct(bytesReceive)
-		PrintRequest(receiveStruct)
 
 		/* Ici gerer le cas d'erreur */
 
@@ -38,16 +37,24 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			fmt.Println("Envoie PublicKeyRequest")
 			request, err = SendUdpRequest(connUdp, GetRequet(PublicKeyReply, receiveStruct.Id), "81.194.27.155:8443")
 		case RootRequest:
+			PrintRequest(receiveStruct)
 			fmt.Println("Envoie RootReply ")
-			request, err = SendUdpRequest(connUdp, GetRequet(GetDatumRequest, globalID), "81.194.27.155:8443")
+			request, err = SendUdpRequest(connUdp, GetRequet(RootReply, globalID), "81.194.27.155:8443")
+
+			requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, receiveStruct.Length, 0, receiveStruct.Name)
+			_, err = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443")
 
 		case HelloReply:
 			request, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443")
 		case HelloRequest:
 			request, err = SendUdpRequest(connUdp, GetRequet(HelloReply, globalID), "81.194.27.155:8443")
 
-		case GetDatumRequest:
-			request, err = SendUdpRequest(connUdp, GetRequet(Datum, globalID), "81.194.27.155:8443")
+		case Datum:
+			PrintRequest(receiveStruct)
+			fmt.Println(string(receiveStruct.Name))
+
+		case NoDatum:
+			fmt.Println("No datum")
 
 		}
 
@@ -65,8 +72,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 }
 
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
-	for tick := range time.Tick(25 * time.Second) {
-		fmt.Println("MaintainConnexion : Envoie de hello")
+	for tick := range time.Tick(30 * time.Second) {
 		_, err := SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), string(ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port))
 		if err != nil {
 			return

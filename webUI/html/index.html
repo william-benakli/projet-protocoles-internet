@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- <link rel="stylesheet" type="text/css" href="css/graphicUi.css"> -->
+
+        <style>
+
+            #main-contained{
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                background-color: #171717;
+                width: 100%;
+                height: 100%;
+            }
+
+            .peer_contains{
+                border: solid 2px;
+                color: white;
+                margin:auto;
+            }
+        </style>
+    </head>
+    <body>
+        <h1> Paires connectés: </h1>
+        <div id='main-contained'>
+            {{.DivContent}}
+        </div>
+    </body>
+</html>
