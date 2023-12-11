@@ -7,7 +7,7 @@ import (
 
 func ListenActive(connUdp *net.UDPConn, ch chan []byte) {
 
-	maxRequest := make([]byte, 64)
+	maxRequest := make([]byte, 1024)
 	for {
 		n, _, err := connUdp.ReadFromUDP(maxRequest)
 

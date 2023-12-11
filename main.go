@@ -56,14 +56,14 @@ func startClient(channel chan []byte, connUdp *net.UDPConn, ServeurPeer restpeer
 	go udppeer.ListenActive(connUdp, channel)
 
 	//on envoie Hello
-	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port)
+	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port, "MAIN")
 	if err != nil {
 		return
 	}
 	if request {
 		//si tout c bien passé on envoie la suite des requetes et on reste connecté au serveur
-		udppeer.SendUDPPacketFromResponse(connUdp, channel)
-		//go udppeer.MaintainConnexion(connUdp, ServeurPeer)
+		go udppeer.SendUDPPacketFromResponse(connUdp, channel)
+		go udppeer.MaintainConnexion(connUdp, ServeurPeer)
 	} else {
 		fmt.Println("La requête Hello n'a pas été envoyé...")
 		fmt.Println("Fin du programme")
