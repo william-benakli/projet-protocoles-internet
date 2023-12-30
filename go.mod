@@ -1,3 +1,5 @@
 module projet-protocoles-internet
 
-go 1.16.3
+go 1.23
+
+require fyne.io/fyne/v2 v2.4.3 // indirect

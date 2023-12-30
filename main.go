@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"projet-protocoles-internet/UI"
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
-	"projet-protocoles-internet/webUI"
 	"time"
 )
 
@@ -41,8 +41,11 @@ func main() {
 
 	startClient(channel, connUdp, ServeurPeer)
 
-	/* Lancement du web UI Thread Principal */
-	webUI.SetupPage(client)
+	/* Lancement de UI Thread Principal */
+	UI.InitPage(client)
+
+	//Si tu veux tester un autre thread lancer UI avec go
+	//comme go UI.SetupPage(client)
 
 	if err != nil {
 		fmt.Println("Erreur lors de la création de la connexion UDP :", err)
@@ -56,7 +59,7 @@ func startClient(channel chan []byte, connUdp *net.UDPConn, ServeurPeer restpeer
 	go udppeer.ListenActive(connUdp, channel)
 
 	//on envoie Hello
-	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port)
+	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port, "MAIN")
 	if err != nil {
 		return
 	}
