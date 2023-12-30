@@ -3,6 +3,7 @@ package UI
 import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/widget"
+	"log"
 	"net/http"
 	"projet-protocoles-internet/restpeer"
 )
@@ -21,6 +22,11 @@ func InitPage(client *http.Client) {
 	w := a.NewWindow("Hello World")
 
 	w.SetContent(widget.NewLabel("Hello World!"))
+	content := widget.NewButton("Rafraichir les pairs", func() {
+		log.Println("/* Update restCommands */")
+	})
+
+	w.SetContent(content)
 	w.ShowAndRun()
 }
 
