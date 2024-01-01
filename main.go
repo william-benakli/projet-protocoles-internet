@@ -3,9 +3,10 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
-	"projet-protocoles-internet/UI"
+	"os"
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
 	"time"
@@ -24,6 +25,18 @@ func main() {
 	}
 	/* FIN  Client pour REST API */
 
+	/*
+		Preparation des dossiers
+	*/
+
+	if err := os.MkdirAll("tmp/peers/", os.ModePerm); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.MkdirAll("tmp/user/", os.ModePerm); err != nil {
+		log.Fatal(err)
+	}
+
 	udppeer.InitId()
 
 	var PeerSingleton restpeer.PeersUser
@@ -36,13 +49,10 @@ func main() {
 	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
 	channel := make(chan []byte)
 
-	fmt.Println("Préparation UDP terminée")
-	fmt.Println("Lancement des threads")
-
 	startClient(channel, connUdp, ServeurPeer)
 
 	/* Lancement de UI Thread Principal */
-	UI.InitPage(client)
+	//UI.InitPage(client)
 
 	//Si tu veux tester un autre thread lancer UI avec go
 	//comme go UI.SetupPage(client)
@@ -65,8 +75,9 @@ func startClient(channel chan []byte, connUdp *net.UDPConn, ServeurPeer restpeer
 	}
 	if request {
 		//si tout c bien passé on envoie la suite des requetes et on reste connecté au serveur
-		go udppeer.SendUDPPacketFromResponse(connUdp, channel)
+		udppeer.SendUDPPacketFromResponse(connUdp, channel)
 		go udppeer.MaintainConnexion(connUdp, ServeurPeer)
+
 	} else {
 		fmt.Println("La requête Hello n'a pas été envoyé...")
 		fmt.Println("Fin du programme")

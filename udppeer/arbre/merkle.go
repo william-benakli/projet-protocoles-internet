@@ -6,38 +6,41 @@ import (
 )
 
 type Noeud struct {
-	Type       int
-	Name       string
-	Hash       string
-	FilsGauche *Noeud
-	FilsDroit  *Noeud
+	Type          int
+	Data          []byte
+	HashCalculate []byte
+	HashReceive   []byte
+	FilsGauche    *Noeud
+	FilsDroit     *Noeud
 }
 
-func CreateNoeudChunk(data string, name string) *Noeud {
-	return &Noeud{Type: 0, Name: name, Hash: StringToHash(data), FilsGauche: nil, FilsDroit: nil}
-}
-
-func CreateNoeudBigFile(data string, name string) *Noeud {
-	if len(data) < 1024 {
+/*
+	func CreateNoeudChunk(data string, name string) *Noeud {
 		return &Noeud{Type: 0, Name: name, Hash: StringToHash(data), FilsGauche: nil, FilsDroit: nil}
-	} else {
-		milieu := len(data) / 2
-		gauche := CreateNoeudBigFile(data[:milieu], name)
-		droite := CreateNoeudBigFile(data[milieu:], name)
-		return &Noeud{Type: 1, Name: name, Hash: StringToHash(string(gauche.Hash) + string(droite.Hash)), FilsGauche: gauche, FilsDroit: droite}
 	}
-}
 
-func CreateDirectory(data string, name string) *Noeud {
-	if len(data) < 1024 {
-		return &Noeud{Type: 0, Name: name, Hash: StringToHash(data), FilsGauche: nil, FilsDroit: nil}
-	} else {
-		milieu := len(data) / 2
-		gauche := CreateNoeudBigFile(data[:milieu], name)
-		droite := CreateNoeudBigFile(data[milieu:], name)
-		return &Noeud{Type: 2, Name: name, Hash: StringToHash(string(gauche.Hash) + string(droite.Hash)), FilsGauche: gauche, FilsDroit: droite}
+	func CreateNoeudBigFile(data string, name string) *Noeud {
+		if len(data) < 1024 {
+			return &Noeud{Type: 0, Name: name, Hash: StringToHash(data), FilsGauche: nil, FilsDroit: nil}
+		} else {
+			milieu := len(data) / 2
+			gauche := CreateNoeudBigFile(data[:milieu], name)
+			droite := CreateNoeudBigFile(data[milieu:], name)
+			return &Noeud{Type: 1, Name: name, Hash: StringToHash(string(gauche.Hash) + string(droite.Hash)), FilsGauche: gauche, FilsDroit: droite}
+		}
 	}
-}
+
+	func CreateDirectory(data string, name string) *Noeud {
+		if len(data) < 1024 {
+			return &Noeud{Type: 0, Name: name, Hash: StringToHash(data), FilsGauche: nil, FilsDroit: nil}
+		} else {
+			milieu := len(data) / 2
+			gauche := CreateNoeudBigFile(data[:milieu], name)
+			droite := CreateNoeudBigFile(data[milieu:], name)
+			return &Noeud{Type: 2, Name: name, Hash: StringToHash(string(gauche.Hash) + string(droite.Hash)), FilsGauche: gauche, FilsDroit: droite}
+		}
+	}
+*/
 func StringToHash(data string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(data)))
 }
@@ -46,7 +49,7 @@ func Affiche(tab Noeud, profondeur int) {
 	for i := 0; i < profondeur; i++ {
 		indent += "    "
 	}
-	fmt.Printf("%sHash: %s %s\n", indent, tab.Name, (tab.Hash[:]))
+	fmt.Printf("%sHash: %s \n", indent, string(tab.Data))
 	if tab.FilsGauche != nil {
 		Affiche(*tab.FilsGauche, profondeur+1)
 	}
@@ -55,6 +58,7 @@ func Affiche(tab Noeud, profondeur int) {
 	}
 }
 
+/*
 func RecalculateHashes(node *Noeud) {
 	if node == nil {
 		return
@@ -65,7 +69,8 @@ func RecalculateHashes(node *Noeud) {
 		node.Hash = StringToHash(node.FilsGauche.Hash + node.FilsDroit.Hash)
 	}
 }
-
+*/
+/*
 func main() {
 	root := CreateDirectory("data", "root")
 	root.FilsGauche = CreateNoeudBigFile("bigfile_data", "bigfile")
@@ -78,3 +83,4 @@ func main() {
 	RecalculateHashes(root)
 	Affiche(*root, 0)
 }
+*/

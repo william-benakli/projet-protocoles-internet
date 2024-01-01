@@ -1,9 +1,6 @@
 package UI
 
 import (
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/widget"
-	"log"
 	"net/http"
 	"projet-protocoles-internet/restpeer"
 )
@@ -18,17 +15,17 @@ var listOfPeers restpeer.ListOfPeers
 //TODO faire un terminal de debug
 
 func InitPage(client *http.Client) {
-	a := app.New()
-	w := a.NewWindow("Hello World")
+	/*	a := app.New()
+		w := a.NewWindow("Hello World")
 
-	w.SetContent(widget.NewLabel("Hello World!"))
-	content := widget.NewButton("Rafraichir les pairs", func() {
-		log.Println("/* Update restCommands */")
-	})
+		w.SetContent(widget.NewLabel("Hello World!"))
+		content := widget.NewButton("Rafraichir les pairs", func() {
+			log.Println("/* Update restCommands ")
+		})
 
-	w.SetContent(content)
-	w.ShowAndRun()
-}
+		w.SetContent(content)
+		w.ShowAndRun()
+	*/}
 
 func getListUserGraphic() {
 	//renvoyer la liste des pairs
