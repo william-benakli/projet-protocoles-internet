@@ -11,6 +11,8 @@ import (
 //var racine Noeud
 //var current *Noeud
 
+//TODO pourquoi ça boucle
+
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 	for {
 		//	fmt.Println("SendUDPPacketFromResponse ")
@@ -45,6 +47,8 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 
 		case RootRequest:
 			fmt.Println("Envoie RootReply ")
+			fmt.Println("RootRequest ")
+
 			//_, err = SendUdpRequest(connUdp, GetRequet(RootReply, globalID), "81.194.27.155:8443", "ROOT Request")
 
 			//hash := make([]byte, 32)
@@ -54,9 +58,12 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			_, err = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443", "DATUM")
 
 		case HelloReply:
-			//request, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443", "HelloReply")
+			fmt.Println("Hello")
+
+			//_, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443", "HelloReply")
 			//Enrengistrer la pair en mémoire pendant au moins 180secondes
 		case Datum:
+			fmt.Println("Datum ")
 
 			fmt.Println("Datum ")
 			fmt.Println("Hash :  ", receiveStruct.Body[0:31])
@@ -74,13 +81,16 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 					//fmt.Println("Hash", removeEmpty(string(receiveStruct.Body[start_name+32:start_name+64])))
 					requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[start_name+32:start_name+64])), receiveStruct.Body[start_name+32:start_name+64])
 					_, err = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443", "DATUM")
+
 				}
 
 			} else if typeFormat == 1 {
+				fmt.Println("BIF FILE")
 				//Big file donc pour télécharger aussi
 			} else if typeFormat == 0 {
-
+				//000001010101010 -> write() -> test.png
 				//TODO télécharger
+				fmt.Println("################## CHUNK #####################")
 
 			} else {
 				fmt.Println("Cas non traitable")
@@ -94,11 +104,10 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			fmt.Println("No op ignoré")
 
 		case GetDatumRequest:
+			fmt.Println("GetDatum ")
+
 			//TODO Pour l'instant répondre NoDatum
 			//TODO Ici que l'on va envoyé les fichiers de l'arbre de merkel
-
-		default:
-			continue
 
 		}
 
@@ -115,6 +124,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			}
 		*/
 	}
+
 }
 
 func removeEmpty(stringBody string) string {

@@ -10,8 +10,7 @@ type Noeud struct {
 	Data          []byte
 	HashCalculate []byte
 	HashReceive   []byte
-	FilsGauche    *Noeud
-	FilsDroit     *Noeud
+	Fils          []*Noeud
 }
 
 /*
@@ -50,11 +49,8 @@ func Affiche(tab Noeud, profondeur int) {
 		indent += "    "
 	}
 	fmt.Printf("%sHash: %s \n", indent, string(tab.Data))
-	if tab.FilsGauche != nil {
-		Affiche(*tab.FilsGauche, profondeur+1)
-	}
-	if tab.FilsDroit != nil {
-		Affiche(*tab.FilsDroit, profondeur+1)
+	for i := 0; i < len(tab.Fils); i++ {
+		Affiche(*tab.Fils[i], profondeur+1)
 	}
 }
 

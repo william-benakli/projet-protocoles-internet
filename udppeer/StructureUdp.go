@@ -69,7 +69,7 @@ func StructToBytes(message RequestUDPExtension) []byte {
 func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adressPort string, from string) (bool, error) {
 	globalID += 1
 	structToBytes := StructToBytes(RequestUDP)
-	PrintRequest(ByteToStruct(structToBytes), "SEND "+from) // Pour le debugage
+	//PrintRequest(ByteToStruct(structToBytes), "SEND "+from) // Pour le debugage
 	udpAddr, err := net.ResolveUDPAddr("udp", adressPort)
 	count, err := connUdp.WriteToUDP(structToBytes, udpAddr)
 	// verifier que le nbr caracter envoyé = taille structure
