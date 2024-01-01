@@ -10,7 +10,6 @@ type RequestUDPExtension struct {
 	Type   uint8 // care changement a verifier!
 	Length int16
 	Body   []byte
-	//Signature  int8
 }
 
 func NewRequestUDPExtension(id int32, typeVal uint8, length int16, body []byte) RequestUDPExtension {
