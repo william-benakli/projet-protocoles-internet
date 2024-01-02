@@ -1,6 +1,7 @@
 package udppeer
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"projet-protocoles-internet/restpeer"
@@ -14,53 +15,130 @@ import (
 // TODO faire plutot ID-IP car plusieurs ID peuvent être les memes
 var listIdDejaVu []int32
 
-var mapOfDirectoryHash = make(map[string]string)
-var mapOfBigFileHash = make(map[string][]string)
-var mapOfNameInt = make(map[string]int)
-var mapOfChunckHash = make(map[string][]byte)
+// TODO verifier quand on recoit un helloreply si on est deja en communication avec juliuz avec l'historique
+type Noeud struct {
+	//	HashCalculate []byte
+	Type        int8
+	HashReceive []byte
+	Data        []byte
 
-var compteur_rep int
-var compteur_chunck int
-var compteur_bf int
-
-//TODO pourquoi ça boucle
-
-func construireFileFromMap(nameFile string) {
-	var byteOfFile []byte
-	for nameFileOfBigFile := range mapOfBigFileHash {
-		//fmt.Println("on entre 1", nameFileOfBigFile, nameFile)
-		if nameFileOfBigFile == nameFile {
-			//fmt.Println("on entre 2")
-
-			listeOfHash := mapOfBigFileHash[nameFileOfBigFile]
-			//fmt.Println(listeOfHash)
-
-			for i := 0; i < len(listeOfHash); i++ {
-				//fmt.Println("listeOfHash", i)
-				//fmt.Println("mapOfChunckHash[listeOfHash[i]]", len(mapOfChunckHash[listeOfHash[i]]))
-
-				for y := 0; y < len(mapOfChunckHash[listeOfHash[i]]); y++ {
-					//fmt.Println(mapOfChunckHash[listeOfHash[i]][y], "mapOfChunckHash[listeOfHash[i]][y]")
-					byteOfFile = append(byteOfFile, mapOfChunckHash[listeOfHash[i]][y])
-				}
-				//	fmt.Println(byteOfFile)
-			}
-
-		}
-	}
-	//fmt.Println(byteOfFile)
-	//	_ = os.WriteFile(nameFile, byteOfFile, 0644)
-
+	Fils []*Noeud
 }
 
+func afficherArbre(noeud *Noeud, niveau int) {
+	if noeud == nil {
+		return
+	}
+	if noeud.Type == 0 {
+		return
+	}
+
+	indent := ""
+	for i := 0; i < niveau; i++ {
+		indent += "  "
+	}
+
+	hashStr := hex.EncodeToString(noeud.HashReceive)
+	dataStr := string(noeud.Data)
+
+	fmt.Printf("%sNoeud : Type %d Hash: %.5s, Data: %s/\n", indent, noeud.Type, hashStr, dataStr)
+	for _, enfant := range noeud.Fils {
+		afficherArbre(enfant, niveau+1)
+	}
+}
+
+func changeDataFromHash(root *Noeud, hashATrouver []byte, newData []byte) bool {
+	var queue []*Noeud
+	queue = append(queue, root)
+
+	for len(queue) > 0 {
+		currentNode := queue[0]
+		queue = queue[1:]
+
+		if compareHashes(currentNode.HashReceive, hashATrouver) {
+			currentNode.Data = newData
+			return true // Retourne vrai si les données ont été modifiées
+		}
+
+		for _, child := range currentNode.Fils {
+			queue = append(queue, child)
+		}
+	}
+
+	return false // Retourne faux si aucun nœud avec le hash spécifié n'est trouvé
+}
+
+func setType(root *Noeud, hashATrouver []byte, typeFile int8) bool {
+	var queue []*Noeud
+	queue = append(queue, root)
+
+	for len(queue) > 0 {
+		currentNode := queue[0]
+		queue = queue[1:]
+
+		if compareHashes(currentNode.HashReceive, hashATrouver) {
+			currentNode.Type = typeFile
+			return true // Retourne vrai si les données ont été modifiées
+		}
+
+		for _, child := range currentNode.Fils {
+			queue = append(queue, child)
+		}
+	}
+
+	return false // Retourne faux si aucun nœud avec le hash spécifié n'est trouvé
+}
+
+func addNodeFromHash(root *Noeud, hash []byte, noeudToAdd *Noeud) {
+	var queue []*Noeud
+	queue = append(queue, root)
+
+	for len(queue) > 0 {
+		currentNode := queue[0]
+		queue = queue[1:]
+
+		// Vérifie si le nœud actuel a le hash recherché
+		//fmt.Println(hex.EncodeToString(currentNode.HashReceive), " avec ", hex.EncodeToString(hash))
+
+		if compareHashes(currentNode.HashReceive, hash) {
+			currentNode.Fils = append(currentNode.Fils, noeudToAdd)
+			fmt.Println("Hash trouvé j'ajoute")
+			return
+		}
+
+		// Ajoute les fils du nœud actuel à la file
+		for _, child := range currentNode.Fils {
+			queue = append(queue, child)
+		}
+	}
+
+	fmt.Println("Aucun Hash j'ajoute au noeud racine")
+	root.HashReceive = hash
+	root.Fils = append(root.Fils, noeudToAdd)
+}
+
+// compareHashes compare deux slices de bytes (hashes).
+func compareHashes(hash1, hash2 []byte) bool {
+	if len(hash1) != len(hash2) {
+		return false
+	}
+	for i, b := range hash1 {
+		if b != hash2[i] {
+			return false
+		}
+	}
+	return true
+}
+
+var root Noeud
+
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
-	compteur_chunck = 0
-	compteur_bf = 0
-	compteur_rep = 0
+	root.Type = 2
+	afficherArbre(&root, 0)
 	for {
 		//fmt.Println("SendUDPPacketFromResponse ")
-		fmt.Println("compteur_chunck", compteur_chunck, "compteur_bf", compteur_bf, "compteur_rep", compteur_rep)
-		fmt.Println("mapOfBigFileHash", len(mapOfBigFileHash), "mapOfNameInt", len(mapOfNameInt), "mapOfChunckHash", len(mapOfChunckHash), "mapOfDirectoryHash", len(mapOfDirectoryHash))
+		//fmt.Println("compteur_chunck", compteur_chunck, "compteur_bf", compteur_bf, "compteur_rep", compteur_rep)
+		//fmt.Println("mapOfBigFileHash", len(mapOfBigFileHash), "mapOfNameInt", len(mapOfNameInt), "mapOfChunckHash", len(mapOfChunckHash), "mapOfDirectoryHash", len(mapOfDirectoryHash))
 
 		/*
 
@@ -125,27 +203,59 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 			//_, err = SendUdpRequest(connUdp, GetRequet(HelloRequest, globalID), "81.194.27.155:8443", "HelloReply")
 			//Enrengistrer la pair en mémoire pendant au moins 180secondes
 		case Datum:
-			fmt.Println("Hash :  ", receiveStruct.Body[0:31])
+			//fmt.Println("Hash :  ", receiveStruct.Body[0:31])
 			fmt.Println("Type file: ", receiveStruct.Body[32])
 			typeFormat := receiveStruct.Body[32]
 
 			if typeFormat == 2 {
-				compteur_rep = compteur_rep + 1
 
-				go directory(receiveStruct, connUdp)
+				nbFils := (receiveStruct.Length - 33) / 64
+
+				for i := 0; i < int(nbFils); i++ {
+					start_name := 33 + i*64
+					//fmt.Println(removeEmpty(string(receiveStruct.Body[start_name:start_name+32])), "/")
+
+					//					fmt.Println(hex.EncodeToString(receiveStruct.Body[0:32]), "avec ", hex.EncodeToString(receiveStruct.Body[start_name+32:start_name+64]))
+					fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: receiveStruct.Body[start_name : start_name+32]}
+					addNodeFromHash(&root, receiveStruct.Body[0:32], fils)
+
+					//	fmt.Println("Hash fils ajouté: ", hex.EncodeToString(receiveStruct.Body[start_name+32:start_name+64]))
+					requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[start_name+32:start_name+64])), receiveStruct.Body[start_name+32:start_name+64])
+					_, _ = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443", "DATUM")
+				}
+				setType(&root, receiveStruct.Body[0:32], 2)
+
 			} else if typeFormat == 1 {
-				compteur_bf = compteur_bf + 1
 
-				bigFile(receiveStruct, connUdp)
+				nbFils := (receiveStruct.Length - 1) / 32
+
+				for i := 0; i < int(nbFils); i++ {
+					start_name := 1 + i*32
+
+					//fmt.Println("Hash fils recu: ", hex.EncodeToString(receiveStruct.Body[start_name:start_name+32]))
+
+					fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name : start_name+32], Data: make([]byte, 0), Type: 0}
+					addNodeFromHash(&root, receiveStruct.Body[0:32], fils)
+
+					requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[start_name:start_name+32])), receiveStruct.Body[start_name:start_name+32])
+					_, _ = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443", "DATUM")
+				}
+				setType(&root, receiveStruct.Body[0:32], 1)
+
 			} else if typeFormat == 0 {
-				compteur_chunck = compteur_chunck + 1
-				chuck(receiveStruct, connUdp)
+
+				fmt.Println(changeDataFromHash(&root, receiveStruct.Body[0:32], receiveStruct.Body[31:]))
+				afficherArbre(&root, 0)
 			} else {
 				fmt.Println("Cas non traitable")
 			}
 		case NoDatum:
 			fmt.Println("No datum")
+			//log.Fatal("eerr")
 			//fmt.Println(string(receiveStruct.Body))
+
+			//TODO Pour l'instant répondre NoDatum
+			//TODO Ici que l'on va envoyé les fichiers de l'arbre de merkel
 
 		case NoOp:
 			fmt.Println("No op ignoré")
@@ -155,9 +265,6 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan []byte) {
 
 		case Error:
 			fmt.Println("Error ----------------- ")
-
-			//TODO Pour l'instant répondre NoDatum
-			//TODO Ici que l'on va envoyé les fichiers de l'arbre de merkel
 
 		}
 
@@ -176,45 +283,6 @@ func removeEmpty(stringBody string) string {
 	return stringBody[:nullIndex]
 }
 
-func directory(receiveStruct RequestUDPExtension, connUdp *net.UDPConn) {
-	nbFils := (receiveStruct.Length - 33) / 64
-	for i := 0; i < int(nbFils); i++ {
-		start_name := 33 + i*64
-		//map[Body[start_name: start_name+32]] = Body[start_name: start_name+32]
-		fmt.Println(removeEmpty(string(receiveStruct.Body[start_name:start_name+32])), "/")
-		//fmt.Println("Hash", removeEmpty(string(receiveStruct.Body[start_name+32:start_name+64])))
-		mapOfDirectoryHash[string(receiveStruct.Body[start_name:start_name+32])] = string(receiveStruct.Body[start_name+32 : start_name+64])
-		requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[start_name+32:start_name+64])), receiveStruct.Body[start_name+32:start_name+64])
-		_, _ = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443", "DATUM")
-	}
-}
-
-func bigFile(receiveStruct RequestUDPExtension, connUdp *net.UDPConn) {
-
-	nbFils := (receiveStruct.Length - 1) / 32
-	var listHashString []string
-
-	for i := 0; i < int(nbFils); i++ {
-		start_name := 1 + i*32
-		listHashString = append(listHashString, string(receiveStruct.Body[start_name:start_name+32]))
-		requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[start_name:start_name+32])), receiveStruct.Body[start_name:start_name+32])
-		_, _ = SendUdpRequest(connUdp, requestDatum, "81.194.27.155:8443", "DATUM")
-	}
-
-	for nomFichier := range mapOfDirectoryHash {
-		//if mapOfDirectoryHash[nomFichier] == string(receiveStruct.Body[0:31]) {
-		mapOfBigFileHash[nomFichier] = listHashString
-		mapOfNameInt[nomFichier] = int(nbFils)
-		//}
-	}
-
-	fmt.Println("BIF FILE")
-}
-
-func chuck(receiveStruct RequestUDPExtension, connUdp *net.UDPConn) {
-	mapOfChunckHash[string(receiveStruct.Body[0:31])] = receiveStruct.Body[31:]
-	fmt.Println("################## CHUNK #####################")
-}
 func containedList(listId []int32, id int32) bool {
 	for i := 0; i < len(listId); i++ {
 		if listId[i] == id {
