@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var ConnUdp *net.UDPConn
+
 func main() {
 
 	fmt.Println("Lancement du programme")
@@ -46,10 +48,9 @@ func main() {
 	fmt.Println("Connexion REST API terminée")
 
 	ServeurPeer, err := restpeer.GetMasterAddresse(client, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
-	connUdp, err := net.ListenUDP("udp", &net.UDPAddr{})
 	channel := make(chan []byte)
-
-	startClient(channel, connUdp, ServeurPeer)
+	ConnUdp, _ = net.ListenUDP("udp", &net.UDPAddr{})
+	startClient(channel, ServeurPeer)
 
 	/* Lancement de UI Thread Principal */
 	//UI.InitPage(client)
@@ -64,19 +65,19 @@ func main() {
 
 }
 
-func startClient(channel chan []byte, connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
+func startClient(channel chan []byte, ServeurPeer restpeer.PeersUser) {
 	//Tout d'abord on écoute
-	go udppeer.ListenActive(connUdp, channel)
+	go udppeer.ListenActive(ConnUdp, channel)
 
 	//on envoie Hello
-	request, err := udppeer.SendUdpRequest(connUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port, "MAIN")
+	request, err := udppeer.SendUdpRequest(ConnUdp, udppeer.GetRequet(udppeer.HelloRequest, udppeer.GetGlobalID()), "81.194.27.155:8443", "MAIN")
 	if err != nil {
 		return
 	}
 	if request {
 		//si tout c bien passé on envoie la suite des requetes et on reste connecté au serveur
-		udppeer.SendUDPPacketFromResponse(connUdp, channel)
-		go udppeer.MaintainConnexion(connUdp, ServeurPeer)
+		udppeer.SendUDPPacketFromResponse(ConnUdp, channel)
+		go udppeer.MaintainConnexion(ConnUdp, ServeurPeer)
 
 	} else {
 		fmt.Println("La requête Hello n'a pas été envoyé...")
