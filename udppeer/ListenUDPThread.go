@@ -5,17 +5,17 @@ import (
 	"net"
 )
 
-func ListenActive(connUdp *net.UDPConn, ch chan []byte) {
+func ListenActive(connUdp *net.UDPConn, ch chan RequestUDPExtension) {
 
-	maxRequest := make([]byte, 1024*32)
 	for {
+		maxRequest := make([]byte, 1024+34+50)
 		_, _, err := connUdp.ReadFromUDP(maxRequest)
-
+		//fmt.Println(maxRequest)
 		if err != nil {
 			fmt.Println("Erreur lors de la lecture UDP :", err)
-			ch <- nil
+		} else {
+			receiveStruct := ByteToStruct(maxRequest)
+			ch <- receiveStruct
 		}
-
-		ch <- maxRequest
 	}
 }

@@ -3,6 +3,8 @@ package udppeer
 import (
 	"fmt"
 	"net"
+	"projet-protocoles-internet/restpeer"
+	"time"
 )
 
 type RequestUDPExtension struct {
@@ -68,21 +70,39 @@ func StructToBytes(message RequestUDPExtension) []byte {
 func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adressPort string, from string) (bool, error) {
 	globalID += 1
 	structToBytes := StructToBytes(RequestUDP)
-	PrintRequest(ByteToStruct(structToBytes), "SEND "+from) // Pour le debugage
 	udpAddr, err := net.ResolveUDPAddr("udp", adressPort)
-	count, err := connUdp.WriteToUDP(structToBytes, udpAddr)
+
+	//time.Sleep(time.Millisecond * 200)
+	_, _ = connUdp.WriteToUDP(structToBytes, udpAddr)
+	PrintRequest(ByteToStruct(structToBytes), "SEND "+from) // Pour le debugage
+
 	// verifier que le nbr caracter envoyé = taille structure
+	//LastPaquets[globalID] = ByteToStruct(structToBytes)
+	go sendBackOfExpo(globalID, connUdp)
 
-	sendBackOfExpo(globalID, connUdp)
-
-	return count == len(structToBytes), err // gestion d'erreur plus tard
+	return true, err // gestion d'erreur plus tard
 }
 
+func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
+	for tick := range time.Tick(28 * time.Second) {
+
+		//_, err := SendUdpRequest(connUdp, NewRequestUDPExtension(), string(ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port), "MaintainConnexion")
+		//if err != nil {
+		//	return
+		//}
+		fmt.Println(tick, "maintien de la connexion avec le serveur")
+	}
+
+}
+
+var countReceive int
+
 func PrintRequest(requestUdp RequestUDPExtension, status string) {
-	fmt.Println("                 ", status)
+	countReceive += 1
+	fmt.Println("                 ", status, countReceive)
 	fmt.Println("ID :", requestUdp.Id)
 	fmt.Println("TYPE :", GetName(requestUdp.Type), "(", requestUdp.Type, ")")
-	fmt.Println("NAME :", string(requestUdp.Body))
+	fmt.Printf("NAME : %.10s %d\n", string(requestUdp.Body), len(requestUdp.Body))
 	fmt.Println("LENGTH :", requestUdp.Length)
 	fmt.Println("                 ")
 
