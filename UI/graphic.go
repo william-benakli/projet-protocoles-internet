@@ -1,14 +1,21 @@
 package UI
 
 import (
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/widget"
-	"log"
+	"fmt"
 	"net/http"
 	"projet-protocoles-internet/restpeer"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/widget"
 )
 
 var listOfPeers restpeer.ListOfPeers
+var users []string
+var userClicked string
+var arborescence string
 
 //https://developer.fyne.io/started/ doc
 
@@ -19,17 +26,52 @@ var listOfPeers restpeer.ListOfPeers
 
 func InitPage(client *http.Client) {
 	a := app.New()
-	w := a.NewWindow("Hello World")
-
+	w := a.NewWindow("PEER | PROJET INTERNET ")
+	w.Resize(fyne.NewSize(800, 600))
+	var label = widget.NewLabel(arborescence)
 	w.SetContent(widget.NewLabel("Hello World!"))
-	content := widget.NewButton("Rafraichir les pairs", func() {
-		log.Println("/* Update restCommands */")
+	butonRefresh := widget.NewButton("Rafraichir les pairs", func() {
+		users = restpeer.GetRestPeerNames(client)
+		w.Resize(fyne.NewSize(801, 600))
 	})
+	butonDownload := widget.NewButton("Telecharger", func() {
+		fmt.Println("telechargement en cours... : ", userClicked)
+		arborescence = "coucou bg\ncooooooc" // TODO DOIT RECUPERER LA REEL ARBORECENCE
+		label.SetText(arborescence)
+	})
+	listPeerName := widget.NewList(
+		func() int {
+			return len(users)
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("Element")
+		},
+		func(i int, item fyne.CanvasObject) {
+			item.(*widget.Label).SetText(users[i])
+		},
+	)
 
-	w.SetContent(content)
+	listPeerName.OnSelected = func(index int) {
+		if index >= 0 && index < len(users) {
+			fmt.Println("Cliqué sur :", users[index])
+			userClicked = users[index]
+		}
+	}
+
+	header := container.NewVBox(
+		butonRefresh,
+	)
+	lefter := container.NewVBox(
+		butonDownload,
+	)
+	footer := container.NewVBox(
+		label,
+	)
+	c := container.New(layout.NewBorderLayout(header, footer, lefter, nil), header, footer, lefter, listPeerName)
+	w.SetContent(c)
 	w.ShowAndRun()
 }
 
-func getListUserGraphic() {
+func getListUserGraphic(w fyne.Window) {
 	//renvoyer la liste des pairs
 }

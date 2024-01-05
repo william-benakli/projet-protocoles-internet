@@ -16,42 +16,43 @@ const (
 	Datum            uint8 = 132
 	NoDatum          uint8 = 133
 	NoOp             uint8 = 0
+	Error            uint8 = 1
 )
 
-func GetRequet(codeCommands uint8, ID int32) RequestUDPExtension {
-
-	name := []byte("Proute")
-	lenName := int16(len(name)) + 4
+func GetName(codeCommands uint8) string {
 
 	switch codeCommands {
-
 	case HelloRequest:
-		return NewRequestUDPExtension(ID, HelloRequest, lenName, 0, name)
+		return "HelloRequest"
 	case HelloReply:
-		return NewRequestUDPExtension(ID, HelloReply, lenName, 0, name)
-
+		return "HelloReply"
 	case PublicKeyRequest:
-		return NewRequestUDPExtension(ID, PublicKeyRequest, 0, 0, []byte(""))
+
+		return "PublicKeyRequest"
 	case PublicKeyReply:
-		return NewRequestUDPExtension(ID, PublicKeyReply, 0, 0, []byte(""))
 
+		return "PublicKeyReply"
 	case RootRequest:
-		return NewRequestUDPExtension(ID, RootRequest, lenName, 0, name)
+
+		return "RootRequest"
 	case RootReply:
-		return NewRequestUDPExtension(ID, RootReply, 0, 0, []byte(""))
 
+		return "RootReply"
 	case GetDatumRequest:
-		return NewRequestUDPExtension(ID, GetDatumRequest, lenName, 0, name)
 
+		return "GetDatumRequest"
 	case Datum:
-		return NewRequestUDPExtension(ID, Datum, lenName, 0, name)
+
+		return "Datum"
 	case NoDatum:
-		return NewRequestUDPExtension(ID, NoDatum, lenName, 0, name)
 
+		return "NoDatum"
 	case NoOp:
-		return NewRequestUDPExtension(ID, NoOp, lenName, 0, name)
-
+		return "NoOp"
+	case Error:
+		return "Error"
 	default:
-		return NewRequestUDPExtension(ID, HelloRequest, lenName, 0, name)
+
+		return "UNKNOW"
 	}
 }
