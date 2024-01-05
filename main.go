@@ -26,6 +26,8 @@ func main() {
 		Transport: transport,
 		Timeout:   50 * time.Second,
 	}
+	//UI.InitPage(client)
+
 	/* FIN  Client pour REST API */
 
 	/*
@@ -51,30 +53,36 @@ func main() {
 	var i int
 	fmt.Print("Type a number: ")
 	fmt.Scan(&i)
+
 	if i == 0 {
+		arbre.BuildImage(udppeer.GetRoot())
+		arbre.AfficherArbre(udppeer.GetRoot(), 0)
+
+	}
+	/*if i == 0 {
 		arbre.AfficherArbre(udppeer.GetRoot(), 0)
 
 		//	cp := -1
 
-		/*		for {
-					result := udppeer.VerifieNotEmpty(udppeer.GetRoot())
-					fmt.Println("///////// cp", cp, " result", result)
-					if result > 15 {
-						udppeer.Remplir(udppeer.GetRoot(), connUDP)
-						fmt.Println("----------------- ")
-						cp = result
-						time.Sleep(time.Millisecond * 10)
-						if result > 1000 {
-							arbre.AfficherArbre(udppeer.GetRoot(), 0)
-							break
-						}
-					} else {
-						break
-					}
-					//	arbre.AfficherArbre(udppeer.GetRoot(), 0)
-
+		/*for {
+			result := udppeer.VerifieNotEmpty(udppeer.GetRoot())
+			fmt.Println("///////// cp", cp, " result", result)
+			if result > 15 {
+				udppeer.Remplir(udppeer.GetRoot(), connUDP)
+				fmt.Println("----------------- ")
+				cp = result
+				time.Sleep(time.Millisecond * 10)
+				if result > 1000 {
+					arbre.AfficherArbre(udppeer.GetRoot(), 0)
+					break
 				}
-		*/
+			} else {
+				break
+			}
+			//	arbre.AfficherArbre(udppeer.GetRoot(), 0)
+
+		}
+
 		fmt.Println(" ")
 		fmt.Println(" ")
 		fmt.Println(" ")
@@ -86,7 +94,8 @@ func main() {
 
 	}
 
-	/* Lancement de UI Thread Principal */
+	/* Lancement de UI Thread Principal
+	*/
 	//UI.InitPage(client)
 
 	//Si tu veux tester un autre thread lancer UI avec go
@@ -100,12 +109,12 @@ func main() {
 }
 
 func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn, ServeurPeer restpeer.PeersUser) {
-	udppeer.LastPaquets = make(map[int32]udppeer.RequestUDPExtension)
+	udppeer.LastPaquets = udppeer.LastPaquetsMutex{Paquets: make(map[int32]udppeer.RequestTime)}
 	//Tout d'abord on écoute
 	go udppeer.ListenActive(connUDP, channel)
 
 	//on envoie Hello
-
+	go udppeer.RemissionPaquets(connUDP, udppeer.IP_ADRESS)
 	request, err := udppeer.SendUdpRequest(connUDP, udppeer.NewRequestUDPExtension(udppeer.GetGlobalID(), udppeer.HelloRequest, int16(len(name)), []byte(name)), udppeer.IP_ADRESS, "MAIN")
 	if err != nil {
 		return

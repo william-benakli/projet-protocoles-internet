@@ -11,6 +11,7 @@ import (
 // TODO verifier quand on recoit un helloreply si on est deja en communication avec juliuz avec l'historique
 type Noeud struct {
 	//	HashCalculate []byte
+	Pos         int32
 	Type        int8
 	HashReceive []byte
 	NAME        string
@@ -298,4 +299,8 @@ func HashDFS(noeud *Noeud) {
 	}
 	hashCalculate := sha256.Sum256(hash)
 	copy(noeud.HashReceive, hashCalculate[:])
+}
+
+func chunckEmpty(noeud *Noeud) []byte {
+	return make([]byte, 0)
 }

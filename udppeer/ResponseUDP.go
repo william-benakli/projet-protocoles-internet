@@ -120,7 +120,7 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 			start_name := 33 + i*64
 			//	//fmt.Println(removeEmpty(string(receiveStruct.Body[start_name : start_name+32])))
 
-			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" {
+			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" { // || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "r.mp4" {
 
 				fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: removeEmpty(string(receiveStruct.Body[start_name : start_name+32]))}
 				go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
@@ -138,18 +138,18 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 		fmt.Println(nbFils, "BIG FILE ##########################")
 
 		for i := 0; i < int(nbFils); i++ {
-			start_name := 33 + i*32
+			startName := 33 + i*32
 
 			//	//fmt.Println("Hash fils recu: ", hex.EncodeToString(receiveStruct.Body[start_name:start_name+32]))
 
-			fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name : start_name+32], Data: make([]byte, 0)}
+			fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[startName : startName+32], Data: make([]byte, 0)}
 			go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
 
-			requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body[start_name:start_name+32])), receiveStruct.Body[start_name:start_name+32])
+			requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body[startName:startName+32])), receiveStruct.Body[startName:startName+32])
 			SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
-			//time.Sleep(time.Millisecond * 20)
-			//			fmt.Println(i, "on entre bien un fils en +")
+
 		}
+
 		SetType(&root, receiveStruct.Body[0:32], 1)
 
 	} else if typeFormat == 0 { //

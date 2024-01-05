@@ -23,6 +23,8 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 		_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 	case GetDatumRequest:
 		requestGetDatumReply(connexion, receiveStruct)
+	case NoOp:
+		fmt.Println("No OP")
 	case Error:
 		fmt.Print(string(receiveStruct.Body))
 	}
@@ -96,13 +98,6 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 	} else if currentNode.Type == 2 {
 
 		hashCalculate := make([]byte, 0)
-
-		nbFils := (receiveStruct.Length - 33) / 64
-
-		for i := 0; i < int(nbFils); i++ {
-			start_name := 33 + i*64
-			hashCalculate = append(hashCalculate, receiveStruct.Body[start_name+32:start_name+64]...)
-		}
 
 		sha := sha256.Sum256(hashCalculate[:])
 		if !arbre.CompareHashes(sha[:], hashGetDatum) {
