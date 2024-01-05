@@ -5,10 +5,10 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	. "projet-protocoles-internet/udppeer/arbre"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"time"
 )
-
-import . "projet-protocoles-internet/udppeer/arbre"
 
 const REMISSION = 3
 const TempsRemissionMiliSeconde = 2
@@ -20,12 +20,15 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 	case HelloReply: //
 		fmt.Println("HELLO REPLY RECU")
+		// requestDatum := NewRequestUDPExtension(rand.Int31(), PublicKeyRequest, 64, cryptographie.FormateKey())
+		// _, _ = SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "PUBLICKEY")
 		/*hasher := sha256.New()
 		hash := hasher.Sum(nil)
 		_, _ = SendUdpRequest(connUdp, NewRequestUDPExtension(receiveStruct.Id, RootRequest, int16(len(hash)), hash), IP_ADRESS, "ROOT Request")
 		*/
 	case PublicKeyReply:
-		/* stocker la cle crypto */
+		fmt.Println("COCOCOCOCOOCOCOC", receiveStruct.Body)
+		publicKeyReply(receiveStruct)
 
 	case RootReply: //
 		fmt.Println("root reply")
@@ -36,7 +39,7 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 		rootRequest := NewRequestUDPExtension(globalID, RootRequest, int16(len(body)), body)
 		_, _ = SendUdpRequest(connUdp, rootRequest, IP_ADRESS, "ROOT Request")
 		*/
-		requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body)), receiveStruct.Body)
+		requestDatum := NewRequestUDPExtensionSigned(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body)), receiveStruct.Body) // A TESTER
 		_, _ = SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
 
 	case Datum:
@@ -46,6 +49,8 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 	case NoDatum:
 		log.Fatal("no datum")
 		//TODO à changer
+	case ErrorReply:
+		fmt.Println("ERROR Reply recu : ", string(receiveStruct.Body))
 	}
 
 	//} else {
@@ -59,6 +64,14 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 	//	}
 
+}
+
+func publicKeyReply(receiveStruct RequestUDPExtension) {
+	if receiveStruct.Length == 0 {
+		fmt.Println("l'interlocuteur n'implemente pas la crypto")
+	} else {
+		cryptographie.OtherPublicKey = cryptographie.UnFormateKey(receiveStruct.Body) // A TESTER
+	}
 }
 
 func sendBackOfExpo(storeID int32, connUdp *net.UDPConn) {
@@ -120,8 +133,8 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 			start_name := 33 + i*64
 			//	//fmt.Println(removeEmpty(string(receiveStruct.Body[start_name : start_name+32])))
 
-			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "videos" || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "r.mp4" {
-
+			//if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "videos" || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "r.mp4" {
+			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" {
 				fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: removeEmpty(string(receiveStruct.Body[start_name : start_name+32]))}
 				go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
 

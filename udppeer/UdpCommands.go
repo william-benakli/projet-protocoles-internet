@@ -17,6 +17,7 @@ const (
 	NoDatum          uint8 = 133
 	NoOp             uint8 = 0
 	Error            uint8 = 1
+	ErrorReply       uint8 = 128
 )
 
 func GetName(codeCommands uint8) string {

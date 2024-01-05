@@ -49,7 +49,6 @@ func ParcoursRec(noeud *Noeud) error {
 }
 
 func BuildImage(root *Noeud) {
-
 	var queue []*Noeud
 	queue = append(queue, root)
 

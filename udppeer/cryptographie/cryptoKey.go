@@ -1,6 +1,5 @@
 package cryptographie
 
-/*
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -9,15 +8,27 @@ import (
 	"math/big"
 )
 
-Pour obtenir la clé publique associée :
-func test2() {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	publicKey, ok := privateKey.Public().(*ecdsa.PublicKey)
-	//Pour formater la clé publique comme une chaîne de 64 octets :
+var PrivateKey *ecdsa.PrivateKey
+var PublicKey *ecdsa.PublicKey
+var OtherPublicKey ecdsa.PublicKey // clef de l'interlocuteur
+
+func GeneratePrivateKey() *ecdsa.PrivateKey {
+	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	return privateKey
+}
+func GetPublicKey(privateKey *ecdsa.PrivateKey) *ecdsa.PublicKey {
+	publicKey, _ := privateKey.Public().(*ecdsa.PublicKey)
+	return publicKey
+}
+
+//Formate La clef publique pour l'envoyer en reseau
+func FormateKey() []byte {
 	formatted := make([]byte, 64)
-	publicKey.X.FillBytes(formatted[:32])
-	publicKey.Y.FillBytes(formatted[32:])
-	//Pour parser une clé publique représentée comme une chaîne de 64 octets :
+	PublicKey.X.FillBytes(formatted[:32])
+	PublicKey.Y.FillBytes(formatted[32:])
+	return formatted
+}
+func UnFormateKey(data []byte) ecdsa.PublicKey {
 	var x, y big.Int
 	x.SetBytes(data[:32])
 	y.SetBytes(data[32:])
@@ -26,17 +37,21 @@ func test2() {
 		X:     &x,
 		Y:     &y,
 	}
+	return publicKey
+}
+
+func Encrypted(data []byte) []byte {
 	hashed := sha256.Sum256(data)
-	r, s, err := ecdsa.Sign(rand.Reader, privateKey, hashed[:])
+	r, s, _ := ecdsa.Sign(rand.Reader, PrivateKey, hashed[:])
 	signature := make([]byte, 64)
 	r.FillBytes(signature[:32])
 	s.FillBytes(signature[32:])
-	//Pour vérifier un message :
-	var r, s big.Int
-	r.SetBytes(signature[:32])
-	s.SetBytes(signature[32:])
-	hashed := sha256.Sum256(data)
-	ok = ecdsa.Verify(publicKey, hashed[:], &r, &s)
-
+	return signature
 }
-*/
+
+func FormatePrivateKey() []byte {
+	formatted := make([]byte, 64)
+	PrivateKey.X.FillBytes(formatted[:32])
+	PrivateKey.Y.FillBytes(formatted[32:])
+	return formatted
+}

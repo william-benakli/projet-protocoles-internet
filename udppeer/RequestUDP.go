@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"projet-protocoles-internet/udppeer/arbre"
+	"projet-protocoles-internet/udppeer/cryptographie"
 )
 
 func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
@@ -19,7 +20,7 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 		requestTOSend = requestPublicKeyReply(receiveStruct)
 	case RootRequest:
 		requestTOSend = requestRootReply(receiveStruct)
-		requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body)), receiveStruct.Body)
+		requestDatum := NewRequestUDPExtensionSigned(globalID, GetDatumRequest, int16(len(receiveStruct.Body)), receiveStruct.Body)
 		_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 	case GetDatumRequest:
 		requestGetDatumReply(connexion, receiveStruct)
@@ -38,11 +39,11 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 }
 
 func requestHelloReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
-	return NewRequestUDPExtension(receiveStruct.Id, HelloReply, int16(len(receiveStruct.Body)), receiveStruct.Body)
+	return NewRequestUDPExtensionSigned(receiveStruct.Id, HelloReply, int16(len(receiveStruct.Body)), receiveStruct.Body) // NOT SUR IF SIGNED
 }
 
 func requestPublicKeyReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
-	return NewRequestUDPExtension(receiveStruct.Id, PublicKeyReply, 0, []byte(""))
+	return NewRequestUDPExtensionSigned(receiveStruct.Id, PublicKeyReply, 64, cryptographie.FormateKey()) // On utilise la fonction FormateKey
 }
 
 func requestRootReply(receiveStruct RequestUDPExtension) RequestUDPExtension {

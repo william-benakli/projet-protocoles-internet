@@ -2,12 +2,13 @@ package udppeer
 
 import (
 	"fmt"
-	"golang.org/x/exp/rand"
 	"net"
 	"projet-protocoles-internet/udppeer/arbre"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/exp/rand"
 )
 
 type RequestTime struct {
@@ -41,7 +42,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 		}
 
 		listIdDejaVu = append(listIdDejaVu, receiveStruct.Id)
-
+		fmt.Println(receiveStruct.Type)
 		if receiveStruct.Type < 128 {
 			receiveRequest(connUdp, receiveStruct)
 		} else {

@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"net"
 	"projet-protocoles-internet/restpeer"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"time"
 )
 
 type RequestUDPExtension struct {
-	Id     int32
-	Type   uint8 // care changement a verifier!
-	Length int16
-	Body   []byte
+	Id        int32
+	Type      uint8 // care changement a verifier!
+	Length    int16
+	Body      []byte
+	Signature []byte
 }
 
 func NewRequestUDPExtension(id int32, typeVal uint8, length int16, body []byte) RequestUDPExtension {
@@ -22,6 +24,27 @@ func NewRequestUDPExtension(id int32, typeVal uint8, length int16, body []byte) 
 		Body:   body,
 		//Name:       name,
 		//Extensions: extensions,
+	}
+}
+
+func NewRequestUDPExtensionSigned(id int32, typeVal uint8, length int16, body []byte) RequestUDPExtension {
+	buffer := make([]byte, 7+int(len(body)))
+	buffer[0] = byte(id >> 24)
+	buffer[1] = byte(id >> 16)
+	buffer[2] = byte(id >> 8)
+	buffer[3] = byte(id)
+	buffer[4] = typeVal
+	buffer[5] = byte(length >> 8)
+	buffer[6] = byte(length)
+	for i := 0; i < int(len(body)); i++ {
+		buffer[7+i] = body[i]
+	}
+	return RequestUDPExtension{
+		Id:        id,
+		Type:      typeVal,
+		Length:    length,
+		Body:      body,
+		Signature: cryptographie.Encrypted(buffer),
 	}
 }
 
@@ -53,7 +76,7 @@ func ByteToStruct(bytes []byte) RequestUDPExtension {
 // param: RequestUDPExtension, une structure
 // return: un tableau de bytes
 func StructToBytes(message RequestUDPExtension) []byte {
-	buffer := make([]byte, 7+message.Length)
+	buffer := make([]byte, 7+int(message.Length)+int(len(message.Signature)))
 	buffer[0] = byte(message.Id >> 24)
 	buffer[1] = byte(message.Id >> 16)
 	buffer[2] = byte(message.Id >> 8)
@@ -63,6 +86,11 @@ func StructToBytes(message RequestUDPExtension) []byte {
 	buffer[6] = byte(message.Length)
 	for i := 0; i < int(message.Length); i++ {
 		buffer[7+i] = message.Body[i]
+	}
+	if len(message.Signature) != 0 {
+		for i := 0; i < 64; i++ {
+			buffer[7+int(message.Length)+i] = message.Signature[i]
+		}
 	}
 	return buffer
 }

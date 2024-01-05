@@ -10,6 +10,8 @@ import (
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
 	"projet-protocoles-internet/udppeer/arbre"
+	"projet-protocoles-internet/udppeer/cryptographie"
+	"projet-protocoles-internet/utils"
 	"sync"
 	"time"
 )
@@ -17,7 +19,8 @@ import (
 var name = "PROUTE"
 
 func main() {
-
+	cryptographie.PrivateKey = cryptographie.GeneratePrivateKey()
+	cryptographie.PublicKey = cryptographie.GetPublicKey(cryptographie.PrivateKey)
 	fmt.Println("Lancement du programme")
 
 	/* DEBUT Client pour REST API */
@@ -58,7 +61,7 @@ func main() {
 	if i == 0 {
 		arbre.ParcoursRec(udppeer.GetRoot())
 		arbre.AfficherArbre(udppeer.GetRoot(), 0)
-
+		arbre.BuildImage(udppeer.GetRoot())
 	}
 	/*if i == 0 {
 		arbre.AfficherArbre(udppeer.GetRoot(), 0)
@@ -118,7 +121,7 @@ func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn,
 
 	//on envoie Hello
 	go udppeer.RemissionPaquets(connUDP, udppeer.IP_ADRESS)
-	request, err := udppeer.SendUdpRequest(connUDP, udppeer.NewRequestUDPExtension(udppeer.GetGlobalID(), udppeer.HelloRequest, int16(len(name)), []byte(name)), udppeer.IP_ADRESS, "MAIN")
+	request, err := udppeer.SendUdpRequest(connUDP, udppeer.NewRequestUDPExtensionSigned(udppeer.GetGlobalID(), udppeer.HelloRequest, int16(len(utils.NameUser)), []byte(utils.NameUser)), udppeer.IP_ADRESS, "MAIN")
 	if err != nil {
 		return
 	}
