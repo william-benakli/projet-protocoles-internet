@@ -120,7 +120,7 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 			start_name := 33 + i*64
 			//	//fmt.Println(removeEmpty(string(receiveStruct.Body[start_name : start_name+32])))
 
-			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" { // || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "r.mp4" {
+			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "videos" || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "r.mp4" {
 
 				fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: removeEmpty(string(receiveStruct.Body[start_name : start_name+32]))}
 				go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)

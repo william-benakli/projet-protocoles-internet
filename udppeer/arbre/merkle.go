@@ -26,29 +26,27 @@ const (
 	ChunkSize     = 1024
 )
 
-/*
 func ParcoursRec(noeud *Noeud) error {
 
-		switch noeud.Type {
-		case 1: // bigfile
-			var donnéesComplètes []byte
-			for _, fils := range noeud.Fils {
-				donnéesComplètes = append(donnéesComplètes, fils.Data...)
-			}
-			return os.WriteFile("tmp/peers/"+noeud.NAME, donnéesComplètes, 0644)
-		case 2: // directory
-			for _, fils := range noeud.Fils {
-				if err := ParcoursRec(fils); err != nil {
-					return err
-				}
-			}
-		default: // chunk
-			return os.WriteFile("tmp/peers/"+noeud.NAME, noeud.Data, 0644)
+	switch noeud.Type {
+	case 1: // bigfile
+		var donnéesComplètes []byte
+		for _, fils := range noeud.Fils {
+			donnéesComplètes = append(donnéesComplètes, fils.Data...)
 		}
-
-		return nil
+		return os.WriteFile("tmp/peers/"+noeud.NAME, donnéesComplètes, 0644)
+	case 2: // directory
+		for _, fils := range noeud.Fils {
+			if err := ParcoursRec(fils); err != nil {
+				return err
+			}
+		}
+	default: // chunk
+		return os.WriteFile("tmp/peers/"+noeud.NAME, noeud.Data, 0644)
 	}
-*/
+
+	return nil
+}
 
 func BuildImage(root *Noeud) {
 

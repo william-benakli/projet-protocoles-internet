@@ -72,26 +72,18 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 	structToBytes := StructToBytes(RequestUDP)
 	udpAddr, err := net.ResolveUDPAddr("udp", adressPort)
 
-	time.Sleep(time.Millisecond * 25)
-	_, _ = connUdp.WriteToUDP(structToBytes, udpAddr)
-	//	PrintRequest(ByteToStruct(structToBytes), "SEND "+from) // Pour le debugage
+	time.Sleep(time.Millisecond * 50)
 
-	//mutextLastPaquets.Lock()
-	//defer mutextLastPaquets.Unlock()
+	_, _ = connUdp.WriteToUDP(structToBytes, udpAddr)
 
 	if RequestUDP.Type < 128 {
 		var TimeRequestUDP RequestTime
 		TimeRequestUDP.REQUEST = RequestUDP
 		TimeRequestUDP.TIME = time.Now().UnixMilli()
-		LastPaquets.mutex.Lock()
-		LastPaquets.Paquets[RequestUDP.Id] = TimeRequestUDP
-		LastPaquets.mutex.Unlock()
+		RequestTimes.Store(RequestUDP.Id, TimeRequestUDP)
+
 	}
 
-	// verifier que le nbr caracter envoyé = taille structure
-	//LastPaquets[globalID] = ByteToStruct(structToBytes)
-	//go sendBackOfExpo(globalID, connUdp)
-	//	time.Sleep(time.Duration(time.Millisecond) * 120)
 	return true, err // gestion d'erreur plus tard
 }
 

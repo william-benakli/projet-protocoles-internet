@@ -10,6 +10,7 @@ import (
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
 	"projet-protocoles-internet/udppeer/arbre"
+	"sync"
 	"time"
 )
 
@@ -55,7 +56,7 @@ func main() {
 	fmt.Scan(&i)
 
 	if i == 0 {
-		arbre.BuildImage(udppeer.GetRoot())
+		arbre.ParcoursRec(udppeer.GetRoot())
 		arbre.AfficherArbre(udppeer.GetRoot(), 0)
 
 	}
@@ -109,8 +110,10 @@ func main() {
 }
 
 func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn, ServeurPeer restpeer.PeersUser) {
-	udppeer.LastPaquets = udppeer.LastPaquetsMutex{Paquets: make(map[int32]udppeer.RequestTime)}
+	//udppeer.LastPaquets = udppeer.LastPaquetsMutex{Paquets: make(map[int32]udppeer.RequestTime)}
 	//Tout d'abord on écoute
+	udppeer.RequestTimes = sync.Map{}
+
 	go udppeer.ListenActive(connUDP, channel)
 
 	//on envoie Hello
