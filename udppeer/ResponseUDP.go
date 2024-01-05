@@ -71,6 +71,7 @@ func publicKeyReply(receiveStruct RequestUDPExtension) {
 		fmt.Println("l'interlocuteur n'implemente pas la crypto")
 	} else {
 		cryptographie.OtherPublicKey = cryptographie.UnFormateKey(receiveStruct.Body) // A TESTER
+
 	}
 }
 

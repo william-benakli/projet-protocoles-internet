@@ -26,7 +26,7 @@ func main() {
 	/* DEBUT Client pour REST API */
 	transport := &*http.DefaultTransport.(*http.Transport)
 	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{
+	Client := &http.Client{
 		Transport: transport,
 		Timeout:   50 * time.Second,
 	}
@@ -49,7 +49,7 @@ func main() {
 	udppeer.InitId()
 	fmt.Println("Connexion REST API terminée")
 
-	ServeurPeer, err := restpeer.GetMasterAddresse(client, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
+	ServeurPeer, err := restpeer.GetMasterAddresse(Client, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 	channel := make(chan udppeer.RequestUDPExtension)
 	connUDP, _ := net.ListenUDP("udp", &net.UDPAddr{})
 	go startClient(channel, connUDP, ServeurPeer)

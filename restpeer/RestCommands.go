@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"strings"
 )
 
@@ -48,6 +49,29 @@ func GetListOfPeers(client *http.Client, peersTableau []string) ListOfPeers {
 		}
 	}
 	return listOfPeers
+}
+
+func GetPublicKey(client *http.Client, name string) {
+	resp, err := client.Get("https://jch.irif.fr:8443/peers/" + name + "/key")
+
+	if err != nil {
+		log.Fatal("getPublicKey")
+	}
+	if resp.Body != nil {
+		if resp.StatusCode == 200 {
+			body, readIo := io.ReadAll(resp.Body)
+			if readIo != nil {
+				log.Fatal("io failed")
+			}
+			cryptographie.OtherPublicKey = cryptographie.UnFormateKey(body)
+		} else if resp.StatusCode == 204 {
+			fmt.Println("no key")
+		} else {
+			fmt.Println("pair inconnu")
+		}
+	} else {
+		fmt.Println("Erreur aucune nom de peers ")
+	}
 }
 
 func GetRestPeerNames(client *http.Client) []string {

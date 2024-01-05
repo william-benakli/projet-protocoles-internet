@@ -55,3 +55,12 @@ func FormatePrivateKey() []byte {
 	PrivateKey.Y.FillBytes(formatted[32:])
 	return formatted
 }
+
+func VerifyHash(data []byte, signature []byte) bool {
+	var r, s big.Int
+	r.SetBytes(signature[:32])
+	s.SetBytes(signature[32:])
+	hashed := sha256.Sum256(data)
+	ok := ecdsa.Verify(&OtherPublicKey, hashed[:], &r, &s)
+	return ok
+}

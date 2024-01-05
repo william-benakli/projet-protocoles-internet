@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net"
+	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/arbre"
 	"projet-protocoles-internet/udppeer/cryptographie"
+	"projet-protocoles-internet/utils"
 )
 
 func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
@@ -16,6 +18,7 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 	case HelloRequest:
 		requestTOSend = requestHelloReply(receiveStruct)
+		restpeer.GetPublicKey(utils.Client, string(receiveStruct.Body))
 	case PublicKeyRequest:
 		requestTOSend = requestPublicKeyReply(receiveStruct)
 	case RootRequest:

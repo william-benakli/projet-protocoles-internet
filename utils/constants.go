@@ -1,6 +1,10 @@
 package utils
 
+import "net/http"
+
 const NameUser = "    BoulangerPatissierEtFiereDeLetre"
+
+var Client *http.Client
 
 const (
 	HelloRequest     uint8 = 2
