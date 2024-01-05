@@ -7,20 +7,21 @@ import (
 	"net/http"
 	"strings"
 )
+import . "projet-protocoles-internet/udppeer/Tools"
 
 /* Private fonction */
 func getPeerStructFromStringTab(name string, userPeer []string) PeersUser {
 	var peer PeersUser
-	peer.Port = strings.Split(userPeer[0], ":")[1]
 
 	for i := 0; i < len(userPeer); i++ {
 		if strings.HasPrefix(userPeer[i], "[") {
+			port := strings.Split(userPeer[i], ":")[7]
 			//IPV6
-			addressIp := strings.Replace(strings.Replace(strings.Split(userPeer[i], "]:")[0], "[", "", -1), "]", "", -1)
+			addressIp := strings.Replace(strings.Replace(strings.Split(userPeer[i], "]:")[0], "[", "", -1), "]", "", -1) + ":" + port
 			peer.ListOfAddresses = append(peer.ListOfAddresses, addressIp)
 		} else {
 			//IPV4
-			addressIp := strings.Split(userPeer[i], ":")[0]
+			addressIp := userPeer[i]
 			peer.ListOfAddresses = append(peer.ListOfAddresses, addressIp)
 		}
 	}
@@ -34,19 +35,14 @@ func getPeerStructFromStringTab(name string, userPeer []string) PeersUser {
 func GetListOfPeers(client *http.Client, peersTableau []string) ListOfPeers {
 	var listOfPeers ListOfPeers
 	for i := 0; i < len(peersTableau); i++ {
-		if len(peersTableau[i]) < 16 && !strings.ContainsAny(peersTableau[i], " ") {
-
-			infoPeers := SendRestPeerAdresses(client, peersTableau[i])
-			if len(infoPeers) > 1 && !strings.Contains(infoPeers[0], "404") {
-				fmt.Println(infoPeers[0], strings.Contains(infoPeers[0], "404 page not found "), " -------------- ")
-				listOfPeers.ListOfPeers = append(listOfPeers.ListOfPeers, getPeerStructFromStringTab(peersTableau[i], infoPeers))
-			} else {
-				fmt.Println(peersTableau[i], " a été ignoré car il a aucune ip associé")
-			}
+		infoPeers := SendRestPeerAdresses(client, peersTableau[i])
+		if !strings.Contains(infoPeers[0], "404") {
+			listOfPeers.ListOfPeers = append(listOfPeers.ListOfPeers, getPeerStructFromStringTab(peersTableau[i], infoPeers))
 		} else {
-			fmt.Println(peersTableau[i], " a été ignoré car il comporte des espaces ou est trop long")
+			fmt.Println(peersTableau[i], " Auncune ip")
 		}
 	}
+
 	return listOfPeers
 }
 
@@ -82,16 +78,16 @@ func GetMasterAddresse(client *http.Client, url string) (PeersUser, error) {
 
 	var pair PeersUser
 	ipv4Ipv6 := strings.Split(string(body), "\n")
-	pair.Port = strings.Split(ipv4Ipv6[0], ":")[1]
 
 	for i := 0; i < len(ipv4Ipv6); i++ {
 		if strings.HasPrefix(ipv4Ipv6[i], "[") {
+			port := strings.Split(ipv4Ipv6[i], ":")[7]
 			//IPV6
-			addressIp := strings.Replace(strings.Replace(strings.Split(ipv4Ipv6[i], "]:")[0], "[", "", -1), "]", "", -1)
+			addressIp := strings.Replace(strings.Replace(strings.Split(ipv4Ipv6[i], "]:")[0], "[", "", -1), "]", "", -1) + ":" + port
 			pair.ListOfAddresses = append(pair.ListOfAddresses, addressIp)
 		} else {
 			//IPV4
-			addressIp := strings.Split(ipv4Ipv6[i], ":")[0]
+			addressIp := ipv4Ipv6[i]
 			pair.ListOfAddresses = append(pair.ListOfAddresses, addressIp)
 		}
 	}
@@ -119,9 +115,17 @@ func SendRestPeerAdresses(client *http.Client, namePeer string) []string {
 	}
 }
 
-// TODO: à finir
-func GetAdrFromNamePeers(userName []byte) string {
-	var user PeersUser
+func GetAdrFromNamePeers(userName string) string {
 
-	return user.ListOfAddresses[0] + ":" + user.Port
+	listPeers := GetListOfPeers(ClientRestAPI, GetRestPeerNames(ClientRestAPI))
+
+	for i := range listPeers.ListOfPeers {
+		if listPeers.ListOfPeers[i].NameUser == userName {
+			fmt.Println(listPeers.ListOfPeers[i].ListOfAddresses[0], " #############")
+			return listPeers.ListOfPeers[i].ListOfAddresses[0]
+		}
+	}
+	fmt.Println("Aucune adresse associé")
+	user, _ := GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
+	return user.ListOfAddresses[0]
 }

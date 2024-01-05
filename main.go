@@ -7,12 +7,17 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"projet-protocoles-internet/UI"
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
-	"projet-protocoles-internet/udppeer/arbre"
+	"projet-protocoles-internet/udppeer/Tools"
 	"sync"
 	"time"
 )
+
+import . "projet-protocoles-internet/udppeer"
+
+import . "projet-protocoles-internet/udppeer/Tools"
 
 var name = "PROUTE"
 
@@ -23,17 +28,10 @@ func main() {
 	/* DEBUT Client pour REST API */
 	transport := &*http.DefaultTransport.(*http.Transport)
 	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{
+	ClientRestAPI = &http.Client{
 		Transport: transport,
 		Timeout:   50 * time.Second,
 	}
-	//UI.InitPage(client)
-
-	/* FIN  Client pour REST API */
-
-	/*
-		Preparation des dossiers
-	*/
 
 	if err := os.MkdirAll("tmp/peers/", os.ModePerm); err != nil {
 		log.Fatal(err)
@@ -43,23 +41,36 @@ func main() {
 		log.Fatal(err)
 	}
 
+	Tools.ShowDebug()
+
 	udppeer.InitId()
 	fmt.Println("Connexion REST API terminée")
 
-	ServeurPeer, err := restpeer.GetMasterAddresse(client, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
-	channel := make(chan udppeer.RequestUDPExtension)
+	ServeurPeer, err := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
+	channel := make(chan RequestUDPExtension)
 	connUDP, _ := net.ListenUDP("udp", &net.UDPAddr{})
 	go startClient(channel, connUDP, ServeurPeer)
 
-	var i int
-	fmt.Print("Type a number: ")
-	fmt.Scan(&i)
+	UI.InitPage()
 
-	if i == 0 {
-		arbre.ParcoursRec(udppeer.GetRoot())
-		arbre.AfficherArbre(udppeer.GetRoot(), 0)
+	/*for {
+		var i int
+		fmt.Print("Send Hello: ")
+		fmt.Scan(&i)
 
-	}
+		if i == 1 {
+			SendUdpRequest(connUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(name)), []byte(name)), IP_ADRESS, "MAIN")
+
+		} else if i == 2 {
+			arbre.BuildImage(GetRoot(), "tmp/peers/juliuz/")
+			arbre.AfficherArbre(GetRoot(), 0)
+
+		} else {
+			InitRoot()
+		}
+	}*/
+
+	//UI.InitPage(client)
 	/*if i == 0 {
 		arbre.AfficherArbre(udppeer.GetRoot(), 0)
 
@@ -112,23 +123,11 @@ func main() {
 func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn, ServeurPeer restpeer.PeersUser) {
 	//udppeer.LastPaquets = udppeer.LastPaquetsMutex{Paquets: make(map[int32]udppeer.RequestTime)}
 	//Tout d'abord on écoute
-	udppeer.RequestTimes = sync.Map{}
-
-	go udppeer.ListenActive(connUDP, channel)
-
+	RequestTimes = sync.Map{}
+	go ListenActive(connUDP, channel)
 	//on envoie Hello
-	go udppeer.RemissionPaquets(connUDP, udppeer.IP_ADRESS)
-	request, err := udppeer.SendUdpRequest(connUDP, udppeer.NewRequestUDPExtension(udppeer.GetGlobalID(), udppeer.HelloRequest, int16(len(name)), []byte(name)), udppeer.IP_ADRESS, "MAIN")
-	if err != nil {
-		return
-	}
-	if request {
+	go RemissionPaquets(connUDP, IP_ADRESS)
+	go SendUDPPacketFromResponse(connUDP, channel)
+	go MaintainConnexion(connUDP, ServeurPeer)
 
-		udppeer.SendUDPPacketFromResponse(connUDP, channel)
-		go udppeer.MaintainConnexion(connUDP, ServeurPeer)
-
-	} else {
-		fmt.Println("La requête Hello n'a pas été envoyé...")
-		fmt.Println("Fin du programme")
-	}
 }

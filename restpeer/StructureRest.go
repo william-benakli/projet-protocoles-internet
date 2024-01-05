@@ -9,5 +9,4 @@ type PeersUser struct {
 	NameUser        string
 	NameLen         int16
 	ListOfAddresses []string
-	Port            string
 }

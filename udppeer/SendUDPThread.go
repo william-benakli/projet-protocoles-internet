@@ -24,7 +24,7 @@ func GetRoot() *arbre.Noeud {
 	return &root
 }
 
-const IP_ADRESS = "81.194.27.155:8443"
+var IP_ADRESS = "81.194.27.155:8443"
 
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExtension) {
 
@@ -47,7 +47,6 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 		} else {
 			receiveResponse(connUdp, receiveStruct)
 		}
-
 	}
 
 }
@@ -71,11 +70,11 @@ func containedList(listId []int32, id int32) bool {
 }
 
 func RemissionPaquets(connUdp *net.UDPConn, adressPort string) {
-	for _ = range time.Tick(4 * time.Second) {
+	for _ = range time.Tick(5 * time.Second) {
 		RequestTimes.Range(func(key, value interface{}) bool {
 
 			if requestTime, ok := value.(RequestTime); ok {
-				if (time.Now().UnixMilli() - requestTime.TIME) > 5000 {
+				if (time.Now().UnixMilli() - requestTime.TIME) > 7000 {
 					requestDatum := NewRequestUDPExtension(requestTime.REQUEST.Id, requestTime.REQUEST.Type, int16(len(requestTime.REQUEST.Body)), requestTime.REQUEST.Body)
 					SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "remissionPaquets ")
 					fmt.Println("Remission paquet ")

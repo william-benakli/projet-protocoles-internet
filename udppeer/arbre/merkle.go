@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
-// TODO verifier quand on recoit un helloreply si on est deja en communication avec juliuz avec l'historique
+import . "projet-protocoles-internet/udppeer/Tools"
+
 type Noeud struct {
 	//	HashCalculate []byte
-	Pos         int32
+	ID          int
 	Type        int8
 	HashReceive []byte
 	NAME        string
@@ -19,72 +21,70 @@ type Noeud struct {
 	Fils        []*Noeud
 }
 
-const (
-	DirectoryType = 2
-	BigFileType   = 1
-	ChunkType     = 0
-	ChunkSize     = 1024
-)
+func BuildImage(noeud *Noeud, chemin string) {
+	if noeud == nil {
+		return
+	}
 
-func ParcoursRec(noeud *Noeud) error {
+	cheminComplet := filepath.Join(chemin, noeud.NAME)
+
+	fmt.Println(cheminComplet)
 
 	switch noeud.Type {
-	case 1: // bigfile
-		var donnéesComplètes []byte
-		for _, fils := range noeud.Fils {
-			donnéesComplètes = append(donnéesComplètes, fils.Data...)
-		}
-		return os.WriteFile("tmp/peers/"+noeud.NAME, donnéesComplètes, 0644)
-	case 2: // directory
-		for _, fils := range noeud.Fils {
-			if err := ParcoursRec(fils); err != nil {
-				return err
+	case ChunkType:
+		if len(noeud.NAME) > 0 {
+			err := os.WriteFile(cheminComplet, noeud.Data, 0644)
+			if err != nil {
+				fmt.Println("Error writing", err)
 			}
 		}
-	default: // chunk
-		return os.WriteFile("tmp/peers/"+noeud.NAME, noeud.Data, 0644)
+	case BigFileType:
+		bytetab := make([]byte, 0)
+		for _, child := range noeud.Fils {
+			bytetab = append(bytetab, BuildBigFile(child)...)
+		}
+		//fmt.Println("tmp/peers/" + noeud.NAME)
+
+		if len(bytetab) != 0 {
+			fmt.Println(cheminComplet)
+			err := os.WriteFile(cheminComplet, bytetab, 0644)
+			if err != nil {
+				fmt.Println("Error write file bigfile", err)
+			}
+		}
+
+	case DirectoryType:
+		err := os.MkdirAll(cheminComplet, os.ModePerm)
+		if err != nil {
+			fmt.Println("Error creating directory:", err)
+		}
 	}
 
-	return nil
+	for _, child := range noeud.Fils {
+		BuildImage(child, cheminComplet)
+	}
 }
 
-func BuildImage(root *Noeud) {
+type ByID []*Noeud
 
-	var queue []*Noeud
-	queue = append(queue, root)
+func (a ByID) Len() int           { return len(a) }
+func (a ByID) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByID) Less(i, j int) bool { return a[i].ID < a[j].ID }
 
-	for len(queue) > 0 {
-		currentNode := queue[0]
-		queue = queue[1:]
+func BuildBigFile(noeud *Noeud) []byte {
+	bytetab := make([]byte, 0)
 
-		//fmt.Println(removeEmpty(string(currentNode.Data)))
+	sort.Sort(ByID(noeud.Fils))
 
-		if currentNode.Type == 0 {
-			if len(currentNode.NAME) > 0 {
-				err := os.WriteFile("tmp/peers/"+currentNode.NAME, currentNode.Data, 0644)
-				if err != nil {
-					fmt.Println("Erreur writing")
-				}
-			}
-		} else if currentNode.Type == 1 {
-			bytetab := make([]byte, 0)
-
-			for i := 0; i < len(currentNode.Fils); i++ {
-				for j := 0; j < len(currentNode.Fils[i].Fils); j++ {
-					for k := 0; k < len(currentNode.Fils[i].Fils[j].Data); k++ {
-						bytetab = append(bytetab, currentNode.Fils[i].Fils[j].Data[k])
-					}
-				}
-			}
-			os.WriteFile("tmp/peers/"+currentNode.NAME, bytetab, 0644)
-
-		}
-
-		for _, child := range currentNode.Fils {
-			queue = append(queue, child)
+	for _, child := range noeud.Fils {
+		switch child.Type {
+		case ChunkType:
+			bytetab = append(bytetab, child.Data...)
+		case BigFileType:
+			bytetab = append(bytetab, BuildBigFile(child)...)
 		}
 	}
-
+	return bytetab
 }
 
 func AfficherArbre(noeud *Noeud, niveau int) {
@@ -92,21 +92,12 @@ func AfficherArbre(noeud *Noeud, niveau int) {
 	if noeud == nil {
 		return
 	}
-	/*	if noeud.Type == 0 {
-			return
-		}
-	*/
 	indent := ""
 	for i := 0; i < niveau; i++ {
 		indent += "       -"
 	}
-
 	hashStr := hex.EncodeToString(noeud.HashReceive)
-	//dataStr := string(noeud.Data)
-	/*if len(noeud.Data) == 0 && noeud.Type == 0 {
-		return
-	}*/
-	fmt.Printf("%sNoeud : Type %d Fils: %d Hash: %.5s, Name: %s, Data: %d\n", indent, noeud.Type, len(noeud.Fils), hashStr, noeud.NAME, len(noeud.Data))
+	fmt.Printf("%sNoeud : Type %d Fils: %d ID: %d Hash: %.5s, Name: %s, Data: %d\n", indent, noeud.Type, len(noeud.Fils), noeud.ID, hashStr, noeud.NAME, len(noeud.Data))
 
 	for _, enfant := range noeud.Fils {
 		AfficherArbre(enfant, niveau+1)
@@ -213,6 +204,10 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 
 	if fichierInfo.IsDir() {
 		noeud.Type = DirectoryType
+
+		body := make([]byte, 0)
+		body = append(body, DirectoryType)
+
 		fichiers, err := os.ReadDir(chemin)
 		if err != nil {
 			return nil, err
@@ -225,63 +220,112 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 			}
 			noeud.Fils = append(noeud.Fils, fils)
 		}
-	} else {
-		noeud.Type = BigFileType
-		data, err := os.ReadFile(chemin)
-		if err != nil {
-			return nil, err
+
+		for i := range noeud.Fils {
+			body = append(body, []byte(noeud.Fils[i].NAME)...)
+			body = append(body, noeud.Fils[i].HashReceive...)
 		}
+		bodyConvert := sha256.Sum256(body)
+		noeud.HashReceive = bodyConvert[:]
 
-		nbfilsChuck := len(data)/ChunkSize + 1
+	} else {
 
-		if nbfilsChuck > 32 {
+		if fichierInfo.Size() <= 1024 {
 
-			var tabTempoNoeud []*Noeud
+			body := make([]byte, 0)
+			body = append(body, ChunkType)
+			body = append(body, noeud.Data...)
 
-			nbfils := nbfilsChuck/32 + 1
+			noeud.Type = ChunkType
+			data, err := os.ReadFile(chemin)
+			noeud.Data = data
 
-			for i := 0; i < nbfils; i++ {
-				noeudCreate := &Noeud{Type: BigFileType, Data: make([]byte, 0), Fils: make([]*Noeud, 0)}
-				tabTempoNoeud = append(tabTempoNoeud, noeudCreate)
-				noeud.Fils = append(noeud.Fils, noeudCreate)
-			}
+			bodyConvert := sha256.Sum256(body)
+			noeud.HashReceive = bodyConvert[:]
 
-			poseCounter := 0
-			position := 0
-
-			for i := 0; i < len(data); i += ChunkSize {
-				fin := i + ChunkSize
-				if fin > len(data) {
-					fin = len(data)
-				}
-
-				tabTempoNoeud[position].Fils = append(tabTempoNoeud[position].Fils, &Noeud{
-					Type: ChunkType,
-					Data: data[i:fin],
-				})
-				if poseCounter == 32 {
-					poseCounter = 0
-					position = position + 1
-				}
-				poseCounter = poseCounter + 1
+			if err != nil {
+				fmt.Println("Chunck generation failed", err)
 			}
 
 		} else {
-			for i := 0; i < len(data); i += ChunkSize {
-				fin := i + ChunkSize
-				if fin > len(data) {
-					fin = len(data)
+
+			noeud.Type = BigFileType
+
+			body := make([]byte, 0)
+			body = append(body, BigFileType)
+
+			data, err := os.ReadFile(chemin)
+			if err != nil {
+				return nil, err
+			}
+
+			nbfilsChuck := len(data)/ChunkSize + 1
+
+			if nbfilsChuck > 32 {
+
+				var tabTempoNoeud []*Noeud
+
+				nbfils := nbfilsChuck/32 + 1
+
+				for i := 0; i < nbfils; i++ {
+					noeudCreate := &Noeud{Type: BigFileType, Data: make([]byte, 0), Fils: make([]*Noeud, 0), ID: i}
+					tabTempoNoeud = append(tabTempoNoeud, noeudCreate)
+					noeud.Fils = append(noeud.Fils, noeudCreate)
 				}
-				noeud.Fils = append(noeud.Fils, &Noeud{
-					Type: ChunkType,
-					Data: data[i:fin],
-				})
+
+				poseCounter := 0
+				position := 0
+
+				for i := 0; i < len(data); i += ChunkSize {
+					fin := i + ChunkSize
+					if fin > len(data) {
+						fin = len(data)
+					}
+
+					tabTempoNoeud[position].Fils = append(tabTempoNoeud[position].Fils, &Noeud{
+						Type: ChunkType,
+						Data: data[i:fin],
+						ID:   i / ChunkSize,
+					})
+					if poseCounter == 32 {
+						poseCounter = 0
+						position = position + 1
+					}
+					poseCounter = poseCounter + 1
+				}
+
+			} else {
+
+				for i := 0; i < len(data); i += ChunkSize {
+					fin := i + ChunkSize
+					if fin > len(data) {
+						fin = len(data)
+					}
+
+					chunckBody := make([]byte, 0)
+					chunckBody = append(chunckBody, ChunkType)
+					chunckBody = append(chunckBody, data[i:fin]...)
+
+					bodyConvert := sha256.Sum256(chunckBody)
+
+					noeud.Fils = append(noeud.Fils, &Noeud{
+						Type:        ChunkType,
+						Data:        data[i:fin],
+						HashReceive: bodyConvert[:],
+						ID:          i / ChunkSize,
+					})
+
+					body = append(body, bodyConvert[:]...)
+
+				}
 			}
 		}
+
 	}
 	return noeud, nil
 }
 
+/*
 func HashDFS(noeud *Noeud) {
 
 	if noeud.Type == ChunkType {
@@ -301,4 +345,4 @@ func HashDFS(noeud *Noeud) {
 
 func chunckEmpty(noeud *Noeud) []byte {
 	return make([]byte, 0)
-}
+}*/

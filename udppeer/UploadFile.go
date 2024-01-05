@@ -7,7 +7,7 @@ import (
 
 var racine arbre.Noeud
 
-func initRoot() {
+func InitRoot() {
 	racine.Type = 2
 	racine, err := arbre.ParcourirRepertoire("tmp/user")
 	if err != nil {
@@ -15,7 +15,7 @@ func initRoot() {
 	}
 	arbre.HashDFS(racine)
 	arbre.AfficherArbre(racine, 0)
-	arbre.BuildImage(racine)
+	arbre.BuildImage(racine, "tmp/peers/")
 }
 
 func GetRacine() *arbre.Noeud {

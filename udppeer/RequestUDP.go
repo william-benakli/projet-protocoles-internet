@@ -7,6 +7,8 @@ import (
 	"projet-protocoles-internet/udppeer/arbre"
 )
 
+import . "projet-protocoles-internet/udppeer/Tools"
+
 func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 	var requestTOSend RequestUDPExtension
@@ -18,23 +20,16 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 	case PublicKeyRequest:
 		requestTOSend = requestPublicKeyReply(receiveStruct)
 	case RootRequest:
-		requestTOSend = requestRootReply(receiveStruct)
-		requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body)), receiveStruct.Body)
-		_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
+		requestTOSend = requestRootReply(receiveStruct) /* Sa racine */
 	case GetDatumRequest:
 		requestGetDatumReply(connexion, receiveStruct)
 	case NoOp:
 		fmt.Println("No OP")
 	case Error:
-		fmt.Print(string(receiveStruct.Body))
+		fmt.Print("Paquet Error: ", string(receiveStruct.Body))
 	}
 
-	_, err := SendUdpRequest(connexion, requestTOSend, IP_ADRESS, GetName(requestTOSend.Type))
-
-	if err != nil {
-		fmt.Println("sendUDP Failed RequestUDP.go ", err)
-	}
-
+	go SendUdpRequest(connexion, requestTOSend, IP_ADRESS, GetName(requestTOSend.Type))
 }
 
 func requestHelloReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
@@ -53,19 +48,20 @@ func requestRootReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
 }
 
 func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
+
 	hashGetDatum := receiveStruct.Body[32:64]
 	currentNode := getNoeudFromHash(hashGetDatum)
 
 	if currentNode == nil {
 		requestDatum := NewRequestUDPExtension(globalID, NoDatum, 0, make([]byte, 0))
-		_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "NO DATUM")
+		go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "NO DATUM")
 		return
 	}
 
 	body := make([]byte, 0)
 	body = append(body, currentNode.HashReceive...)
 
-	if currentNode.Type == 0 {
+	if currentNode.Type == ChunkType {
 		/* BODY [hash, type, data] */
 		hashCalculate := sha256.Sum256(receiveStruct.Body[33:])
 
@@ -77,7 +73,7 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		body = append(body, 0)
 		body = append(body, currentNode.Data...)
 
-	} else if currentNode.Type == 1 {
+	} else if currentNode.Type == BigFileType {
 
 		hashCalculate := sha256.Sum256(receiveStruct.Body[33:])
 
@@ -95,7 +91,7 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		for i := 0; i < len(currentNode.Fils); i++ {
 			body = append(body, currentNode.Fils[i].HashReceive...)
 		}
-	} else if currentNode.Type == 2 {
+	} else if currentNode.Type == DirectoryType {
 
 		hashCalculate := make([]byte, 0)
 
@@ -120,9 +116,9 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 	} else {
 		error := "type non defini "
 		requestDatum := NewRequestUDPExtension(globalID, Error, int16(len(error)), []byte(error))
-		_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "NO DATUM")
+		SendUdpRequest(connexion, requestDatum, IP_ADRESS, "NO DATUM")
 	}
 
 	requestDatum := NewRequestUDPExtension(globalID, Datum, int16(len(body)+32), body) // TODO constante
-	_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
+	SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 }

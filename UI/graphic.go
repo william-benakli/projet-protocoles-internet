@@ -2,8 +2,11 @@ package UI
 
 import (
 	"fmt"
-	"net/http"
+	"io"
+	"math/rand"
+	"net"
 	"projet-protocoles-internet/restpeer"
+	"projet-protocoles-internet/udppeer/arbre"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -11,6 +14,9 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
+
+import . "projet-protocoles-internet/udppeer"
+import . "projet-protocoles-internet/udppeer/Tools"
 
 var listOfPeers restpeer.ListOfPeers
 var users []string
@@ -24,21 +30,26 @@ var arborescence string
 //TODO faire que les peers soit clickable avec action dessus
 //TODO faire un terminal de debug
 
-func InitPage(client *http.Client) {
+func InitPage() {
+	connUDP, _ := net.ListenUDP("udp", &net.UDPAddr{})
+
 	a := app.New()
 	w := a.NewWindow("PEER | PROJET INTERNET ")
 	w.Resize(fyne.NewSize(800, 600))
 	var label = widget.NewLabel(arborescence)
 	w.SetContent(widget.NewLabel("Hello World!"))
+
 	butonRefresh := widget.NewButton("Rafraichir les pairs", func() {
-		users = restpeer.GetRestPeerNames(client)
+		users = restpeer.GetRestPeerNames(ClientRestAPI)
 		w.Resize(fyne.NewSize(801, 600))
 	})
 	butonDownload := widget.NewButton("Telecharger", func() {
 		fmt.Println("telechargement en cours... : ", userClicked)
+		downloadFile(connUDP)
 		arborescence = "coucou bg\ncooooooc" // TODO DOIT RECUPERER LA REEL ARBORECENCE
 		label.SetText(arborescence)
 	})
+
 	listPeerName := widget.NewList(
 		func() int {
 			return len(users)
@@ -53,16 +64,22 @@ func InitPage(client *http.Client) {
 
 	listPeerName.OnSelected = func(index int) {
 		if index >= 0 && index < len(users) {
-			fmt.Println("Cliqué sur :", users[index])
+			SendUdpRequest(connUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), IP_ADRESS, "MAIN")
 			userClicked = users[index]
+			IP_ADRESS = restpeer.GetAdrFromNamePeers(userClicked)
 		}
 	}
+	butonDownloadFileOnDisk := widget.NewButton("Mettre à jour les fichiers", func() {
+		fmt.Println("telechargement en cours ", userClicked)
+		arbre.BuildImage(GetRoot(), "tmp/peers/"+userClicked)
+	})
 
 	header := container.NewVBox(
 		butonRefresh,
 	)
 	lefter := container.NewVBox(
 		butonDownload,
+		butonDownloadFileOnDisk,
 	)
 	footer := container.NewVBox(
 		label,
@@ -74,4 +91,20 @@ func InitPage(client *http.Client) {
 
 func getListUserGraphic(w fyne.Window) {
 	//renvoyer la liste des pairs
+}
+
+func downloadFile(connexion *net.UDPConn) {
+
+	//client -> root ->
+	get, err := ClientRestAPI.Get("https://jch.irif.fr:8443/peers/" + userClicked + "/root")
+	if err != nil {
+		return
+	}
+	rootKey, err := io.ReadAll(get.Body)
+	if err != nil {
+		return
+	}
+
+	requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(rootKey)), rootKey)
+	go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 }
