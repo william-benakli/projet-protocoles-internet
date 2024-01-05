@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/arbre"
 
@@ -16,7 +17,6 @@ import (
 )
 
 import . "projet-protocoles-internet/udppeer"
-import . "projet-protocoles-internet/udppeer/Tools"
 
 var listOfPeers restpeer.ListOfPeers
 var users []string
@@ -31,7 +31,6 @@ var arborescence string
 //TODO faire un terminal de debug
 
 func InitPage() {
-	connUDP, _ := net.ListenUDP("udp", &net.UDPAddr{})
 
 	a := app.New()
 	w := a.NewWindow("PEER | PROJET INTERNET ")
@@ -45,7 +44,7 @@ func InitPage() {
 	})
 	butonDownload := widget.NewButton("Telecharger", func() {
 		fmt.Println("telechargement en cours... : ", userClicked)
-		downloadFile(connUDP)
+		downloadFile(ConnUDP)
 		arborescence = "coucou bg\ncooooooc" // TODO DOIT RECUPERER LA REEL ARBORECENCE
 		label.SetText(arborescence)
 	})
@@ -64,7 +63,7 @@ func InitPage() {
 
 	listPeerName.OnSelected = func(index int) {
 		if index >= 0 && index < len(users) {
-			SendUdpRequest(connUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), IP_ADRESS, "MAIN")
+			SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), IP_ADRESS, "MAIN")
 			userClicked = users[index]
 			IP_ADRESS = restpeer.GetAdrFromNamePeers(userClicked)
 		}

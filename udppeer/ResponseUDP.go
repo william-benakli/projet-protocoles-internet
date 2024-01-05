@@ -6,13 +6,11 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"projet-protocoles-internet/udppeer/Tools"
+	. "projet-protocoles-internet/Tools"
 	"time"
 )
 
 import . "projet-protocoles-internet/udppeer/arbre"
-
-import . "projet-protocoles-internet/udppeer/Tools"
 
 func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
@@ -70,7 +68,7 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 	hashCalculate := sha3.Sum256(receiveStruct.Body[32:])
 
 	if CompareHashes(hashFromRequete, hashCalculate[:]) {
-		Tools.PrintDebug("Hash incorrect")
+		PrintDebug("Hash incorrect")
 		requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body[0:32])), receiveStruct.Body[0:32])
 		SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
 		return

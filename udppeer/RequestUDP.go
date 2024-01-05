@@ -4,10 +4,9 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net"
+	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/udppeer/arbre"
 )
-
-import . "projet-protocoles-internet/udppeer/Tools"
 
 func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 
@@ -49,7 +48,9 @@ func requestRootReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
 
 func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 
-	hashGetDatum := receiveStruct.Body[32:64]
+	hashGetDatum := make([]byte, 0)
+	copy(hashGetDatum, receiveStruct.Body[32:])
+
 	currentNode := getNoeudFromHash(hashGetDatum)
 
 	if currentNode == nil {

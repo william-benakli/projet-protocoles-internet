@@ -75,6 +75,7 @@ func RemissionPaquets(connUdp *net.UDPConn, adressPort string) {
 
 			if requestTime, ok := value.(RequestTime); ok {
 				if (time.Now().UnixMilli() - requestTime.TIME) > 7000 {
+					RequestTimes.Delete(key)
 					requestDatum := NewRequestUDPExtension(requestTime.REQUEST.Id, requestTime.REQUEST.Type, int16(len(requestTime.REQUEST.Body)), requestTime.REQUEST.Body)
 					SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "remissionPaquets ")
 					fmt.Println("Remission paquet ")

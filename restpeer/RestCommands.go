@@ -5,9 +5,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	. "projet-protocoles-internet/Tools"
 	"strings"
 )
-import . "projet-protocoles-internet/udppeer/Tools"
 
 /* Private fonction */
 func getPeerStructFromStringTab(name string, userPeer []string) PeersUser {

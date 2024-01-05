@@ -3,11 +3,10 @@ package udppeer
 import (
 	"fmt"
 	"net"
+	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/restpeer"
 	"time"
 )
-
-import . "projet-protocoles-internet/udppeer/Tools"
 
 type RequestUDPExtension struct {
 	Id     int32
@@ -78,7 +77,7 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 
 	_, _ = connUdp.WriteToUDP(structToBytes, udpAddr)
 
-	if RequestUDP.Type < 128 {
+	if RequestUDP.Type < 128 && RequestUDP.Id != 0 {
 		var TimeRequestUDP RequestTime
 		TimeRequestUDP.REQUEST = RequestUDP
 		TimeRequestUDP.TIME = time.Now().UnixMilli()
@@ -90,12 +89,8 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 }
 
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
-	for tick := range time.Tick(28 * time.Second) {
-
-		//SendUdpRequest(connUdp, NewRequestUDPExtension(), string(ServeurPeer.ListOfAddresses[0]+":"+ServeurPeer.Port), "MaintainConnexion")
-		//if err != nil {
-		//	return
-		//}
+	for tick := range time.Tick(30 * time.Second) {
+		SendUdpRequest(connUdp, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), ServeurPeer.ListOfAddresses[0], "MaintainConnexion")
 		fmt.Println(tick, "maintien de la connexion avec le serveur")
 	}
 

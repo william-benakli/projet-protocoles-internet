@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	. "projet-protocoles-internet/Tools"
 	"sort"
 )
-
-import . "projet-protocoles-internet/udppeer/Tools"
 
 type Noeud struct {
 	//	HashCalculate []byte

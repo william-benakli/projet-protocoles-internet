@@ -13,7 +13,7 @@ func InitRoot() {
 	if err != nil {
 		fmt.Println("Creation de l'arbre impossible")
 	}
-	arbre.HashDFS(racine)
+	//arbre.HashDFS(racine)
 	arbre.AfficherArbre(racine, 0)
 	arbre.BuildImage(racine, "tmp/peers/")
 }
