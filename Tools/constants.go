@@ -10,7 +10,7 @@ import (
 var ClientRestAPI *http.Client
 var ConnUDP = SetListen(rand.Intn(45000) + 3000)
 
-var Name = "0000MOOON"
+var Name = "MOOON"
 var IP_ADRESS = "81.194.27.155:8443"
 var IP_ADRESS_SEND = "81.194.27.155:8443"
 

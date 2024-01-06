@@ -91,7 +91,11 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
 	for tick := range time.Tick(30 * time.Second) {
-		SendUdpRequest(connUdp, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), ServeurPeer.ListOfAddresses[0], "MaintainConnexion")
+		byteName := make([]byte, len(Name))
+		byteName[0] = 0
+		byteName[1] = 0
+		byteName = append(byteName, []byte(Name)...)
+		SendUdpRequest(connUdp, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], "MaintainConnexion")
 		fmt.Println(tick, "maintien de la connexion avec le serveur")
 	}
 

@@ -53,12 +53,16 @@ func LoginPage() {
 
 	login := widget.NewButton("Connexion", func() {
 		if len(input.Text) == 0 {
-			Name = "0000HEHEH"
+			Name = "HEHEH"
 		} else {
-			Name = "0000" + input.Text
+			Name = input.Text
 		}
+		byteName := make([]byte, len(Name))
+		byteName[0] = 0
+		byteName[1] = 0
+		byteName = append(byteName, []byte(Name)...)
 		ServeurPeer, _ := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
-		SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
+		SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
 		PageMain()
 	})
 
@@ -151,7 +155,11 @@ func PageUser() {
 	})
 
 	Hello := widget.NewButton("Envoyer Hello", func() {
-		rq := NewRequestUDPExtension(GetGlobalID()+1, HelloRequest, int16(len(Name)), []byte(Name))
+		byteName := make([]byte, len(Name))
+		byteName[0] = 0
+		byteName[1] = 0
+		byteName = append(byteName, []byte(Name)...)
+		rq := NewRequestUDPExtension(GetGlobalID()+1, HelloRequest, int16(len(byteName)), byteName)
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
