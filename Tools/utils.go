@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 /* DEBUG */
@@ -37,4 +38,12 @@ func SetListen(port int) *net.UDPConn {
 	}
 
 	return conn
+}
+
+func RemoveEmpty(stringBody string) string {
+	nullIndex := strings.IndexByte(stringBody, '\000')
+	if nullIndex == -1 {
+		return stringBody
+	}
+	return stringBody[:nullIndex]
 }

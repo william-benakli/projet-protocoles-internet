@@ -98,7 +98,7 @@ func GetMasterAddresse(client *http.Client, url string) (PeersUser, error) {
 }
 
 func SendRestPeerAdresses(client *http.Client, namePeer string) []string {
-	resp, err := client.Get("https://jch.irif.fr:8443/peers/" + namePeer + "/addresses")
+	resp, err := client.Get("https://jch.irif.fr:8443/peers/" + RemoveEmpty(namePeer) + "/addresses")
 
 	if err != nil {
 		log.Fatal("client fail to get peer Names ")
@@ -134,7 +134,7 @@ func GetAdrFromNamePeers(userName string) string {
 }
 
 func GetPublicKey(client *http.Client, name string) int {
-	resp, err := client.Get("https://jch.irif.fr:8443/peers/" + name + "/key")
+	resp, err := client.Get("https://jch.irif.fr:8443/peers/" + RemoveEmpty(name) + "/key")
 
 	if err != nil {
 		log.Fatal("getPublicKey")

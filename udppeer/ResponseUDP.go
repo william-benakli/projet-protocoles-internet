@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	. "projet-protocoles-internet/Tools"
+	"projet-protocoles-internet/restpeer"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"time"
 )
 
@@ -17,6 +19,18 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 	switch receiveStruct.Type {
 
 	case HelloReply: //
+
+		fmt.Println(string(receiveStruct.Body), " vide ?")
+
+		rep := restpeer.GetPublicKey(ClientRestAPI, RemoveEmpty(string(receiveStruct.Body)))
+
+		if rep == 200 {
+			if !cryptographie.VerifyHash(receiveStruct.Body, receiveStruct.Signature) {
+				requestTOSend := requestErrorReply(receiveStruct, "Bad signature")
+				go SendUdpRequest(connUdp, requestTOSend, IP_ADRESS_SEND, GetName(requestTOSend.Type))
+			}
+		}
+
 		fmt.Println("HELLO REPLY RECU")
 	case PublicKeyReply:
 		fmt.Println("Public KEY reply bien recu")
@@ -62,7 +76,7 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 			//if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" { // || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "images" {
 
-			fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: removeEmpty(string(receiveStruct.Body[start_name : start_name+32])), ID: i}
+			fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: RemoveEmpty(string(receiveStruct.Body[start_name : start_name+32])), ID: i}
 			go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
 
 			fmt.Println("Envoie du datum")

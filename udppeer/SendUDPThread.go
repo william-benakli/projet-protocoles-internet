@@ -5,7 +5,6 @@ import (
 	"golang.org/x/exp/rand"
 	"net"
 	"projet-protocoles-internet/udppeer/arbre"
-	"strings"
 	"sync"
 	"time"
 )
@@ -52,14 +51,6 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 
 	}
 
-}
-
-func removeEmpty(stringBody string) string {
-	nullIndex := strings.IndexByte(stringBody, '\000')
-	if nullIndex == -1 {
-		return stringBody
-	}
-	return stringBody[:nullIndex]
 }
 
 func containedList(listId []int32, id int32) bool {
