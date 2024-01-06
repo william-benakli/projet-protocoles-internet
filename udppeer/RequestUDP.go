@@ -1,11 +1,11 @@
 package udppeer
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"net"
 	. "projet-protocoles-internet/Tools"
+	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/arbre"
 )
 
@@ -16,7 +16,15 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 	switch receiveStruct.Type {
 
 	case HelloRequest:
-		requestTOSend = requestHelloReply(receiveStruct)
+		/* Son nom -> son ip */
+		nom := string(receiveStruct.Body)
+		IP_ADRESS_SEND = restpeer.GetAdrFromNamePeers(nom)
+		if len(IP_ADRESS_SEND) > 0 {
+			requestTOSend = requestHelloReply(receiveStruct)
+		} else {
+			fmt.Println("IP INCONNUE HelloRequest")
+			return
+		}
 	case PublicKeyRequest:
 		requestTOSend = requestPublicKeyReply(receiveStruct)
 	case RootRequest:
@@ -29,6 +37,7 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 		fmt.Print("Paquet Error: ", string(receiveStruct.Body))
 	}
 
+	//restpeer.GetAdrFromNamePeers(requ)
 	go SendUdpRequest(connexion, requestTOSend, IP_ADRESS, GetName(requestTOSend.Type))
 }
 
@@ -41,10 +50,8 @@ func requestPublicKeyReply(receiveStruct RequestUDPExtension) RequestUDPExtensio
 }
 
 func requestRootReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
-	hasher := sha256.New()
-	hash := hasher.Sum(nil)
-	return NewRequestUDPExtension(receiveStruct.Id, RootReply, int16(len(hash)), hash)
-
+	fmt.Println(GetRacine().HashReceive)
+	return NewRequestUDPExtension(receiveStruct.Id, RootReply, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
 }
 
 func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
@@ -55,6 +62,9 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 	fmt.Println("TEST 0 ")
 
 	currentNode := getNoeudFromHash(hashGetDatum)
+
+	fmt.Println(currentNode.NAME, currentNode.Type, currentNode.ID)
+
 	fmt.Println("TEST 1 ")
 	if currentNode == nil {
 		requestDatum := NewRequestUDPExtension(globalID, NoDatum, 0, make([]byte, 0))

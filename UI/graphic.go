@@ -2,53 +2,93 @@ package UI
 
 import (
 	"fmt"
-	"io"
-	"math/rand"
-	"net"
-	. "projet-protocoles-internet/Tools"
-	"projet-protocoles-internet/restpeer"
-	"projet-protocoles-internet/udppeer/arbre"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"io"
+	"math/rand"
+	"net"
+	"os"
+	"path/filepath"
+	. "projet-protocoles-internet/Tools"
+	"projet-protocoles-internet/restpeer"
+	"projet-protocoles-internet/udppeer/arbre"
 )
 
 import . "projet-protocoles-internet/udppeer"
 
-var listOfPeers restpeer.ListOfPeers
 var users []string
 var userClicked string
-var arborescence string
+var path string = "tmp/peers/"
+var oldpath string = "tmp/peers/"
 
 //https://developer.fyne.io/started/ doc
 
-//TODO Faire un composant peer
-//TODO Ajouter autant de composant qu'il y'a des peers
-//TODO faire que les peers soit clickable avec action dessus
-//TODO faire un terminal de debug
-
 func InitPage() {
+	InitRoot()
+	LoginPage()
+}
 
+var windows fyne.Window
+
+func init() {
 	a := app.New()
-	w := a.NewWindow("PEER | PROJET INTERNET ")
-	w.Resize(fyne.NewSize(800, 600))
-	var label = widget.NewLabel(arborescence)
-	w.SetContent(widget.NewLabel("Hello World!"))
+	windows = a.NewWindow("PEERS | PROJET INTERNET ")
+	windows.Resize(fyne.NewSize(700, 400))
+	windows.CenterOnScreen()
+	windows.FixedSize()
 
-	butonRefresh := widget.NewButton("Rafraichir les pairs", func() {
-		users = restpeer.GetRestPeerNames(ClientRestAPI)
-		w.Resize(fyne.NewSize(801, 600))
+}
+
+func LoginPage() {
+
+	labelWelcome := widget.NewLabel("Bienvenue sur le projet PEERS, Connectez vous pour pouvoir continuer")
+
+	//labelBienvenue.Resize()
+
+	input := widget.NewEntry()
+	input.SetPlaceHolder("Votre pseudo ")
+
+	login := widget.NewButton("Connexion", func() {
+		if len(input.Text) == 0 {
+			Name = "0000HEHEH"
+		} else {
+			Name = "0000" + input.Text
+		}
+		ServeurPeer, _ := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
+		SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
+		PageMain()
 	})
 
-	butonDownload := widget.NewButton("Telecharger", func() {
-		fmt.Println("telechargement en cours... : ", userClicked)
-		downloadFile(ConnUDP)
-		arborescence = "coucou bg\ncooooooc" // TODO DOIT RECUPERER LA REEL ARBORECENCE
-		label.SetText(arborescence)
-	})
+	boxLogin := container.New(layout.NewVBoxLayout(), labelWelcome, input, layout.NewSpacer(), login)
+	content := container.New(layout.NewCenterLayout(), boxLogin)
+
+	windows.SetContent(content)
+	windows.ShowAndRun()
+}
+
+func PageMain() {
+
+	windows.CenterOnScreen()
+	windows.FixedSize()
+
+	labelWelcome := widget.NewLabel("Bienvenue sur le projet PEERS " + Name[4:])
+	contentCenter := container.New(layout.NewCenterLayout(), labelWelcome)
+
+	tabs := container.NewAppTabs(
+		container.NewTabItem("PEERS", getListUserGraphic()),
+		container.NewTabItem("MES FICHIERS", widget.NewLabel("Vos fichiers")), //uploadeFileGraphic()),
+	)
+
+	boxLogin := container.NewBorder(contentCenter, nil, nil, nil, tabs)
+
+	tabs.SetTabLocation(container.TabLocationLeading)
+	windows.SetContent(boxLogin)
+}
+
+func getListUserGraphic() *fyne.Container {
 
 	listPeerName := widget.NewList(
 		func() int {
@@ -66,39 +106,151 @@ func InitPage() {
 		if index >= 0 && index < len(users) {
 			userClicked = users[index]
 			IP_ADRESS = restpeer.GetAdrFromNamePeers(userClicked)
-			fmt.Println(IP_ADRESS, " SELECTED ADDRESSE")
-			SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), IP_ADRESS, "MAIN")
+			PageUser()
 		}
 	}
+
+	butonRefresh := widget.NewButton("Rafraichir les pairs", func() {
+		users = restpeer.GetRestPeerNames(ClientRestAPI)
+		listPeerName.Refresh()
+	})
+
+	footer := container.NewVBox(
+		butonRefresh,
+	)
+	listPeerName.Refresh()
+
+	c := container.New(layout.NewBorderLayout(nil, footer, nil, nil), footer, listPeerName)
+	return c
+}
+
+func PageUser() {
+
+	var label = widget.NewLabel(" Menu de " + userClicked)
+
+	retour := widget.NewButton("Retour", func() {
+		path = "tmp/peers/"
+		PageMain()
+	})
+
+	cRetourLabel := container.New(layout.NewBorderLayout(nil, nil, retour, nil), retour, label)
+
+	Root := widget.NewButton("Envoyer Root", func() {
+		rq := NewRequestUDPExtension(GetGlobalID()+1, PublicKeyReply, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
+		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
+	})
+
+	noOP := widget.NewButton("Envoyer NoOp", func() {
+		rq := NewRequestUDPExtension(GetGlobalID()+1, NoOp, 0, []byte(""))
+		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
+	})
+
+	Hello := widget.NewButton("Envoyer Hello", func() {
+		rq := NewRequestUDPExtension(GetGlobalID()+1, HelloRequest, int16(len(Name)), []byte(Name))
+		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
+	})
+
+	butonDownload := widget.NewButton("Telecharger", func() {
+		fmt.Println("telechargement en cours... : ", userClicked)
+		downloadFile(ConnUDP)
+	})
 
 	butonDownloadFileOnDisk := widget.NewButton("Mettre à jour les fichiers", func() {
 		fmt.Println("telechargement en cours ", userClicked)
 		arbre.BuildImage(GetRoot(), "tmp/peers/"+userClicked)
 	})
 
-	arbreUpdate := widget.NewButton("Mettre à jour mon arbre", func() {
-		fmt.Println("Mise à jour de l'arbre ", userClicked)
-		InitRoot()
+	fileList := widget.NewList(
+		func() int {
+			files, _ := os.ReadDir(path)
+			return len(files)
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("template")
+		},
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			files, _ := os.ReadDir(path)
+			o.(*widget.Label).SetText(files[i].Name())
+		},
+	)
+
+	fileList.OnSelected = func(id widget.ListItemID) {
+		files, _ := os.ReadDir(path)
+		file := files[id]
+		if file.IsDir() {
+			oldpath = path
+			path += file.Name()
+		}
+		fileList.Refresh()
+	}
+
+	retourArbo := widget.NewButton("...", func() {
+		path = oldpath
+		oldpath = filepath.Dir(path)
+		fileList.Refresh()
 	})
 
-	header := container.NewVBox(
-		butonRefresh,
-	)
 	lefter := container.NewVBox(
+		Hello,
+		Root,
+		noOP,
+		layout.NewSpacer(),
 		butonDownload,
 		butonDownloadFileOnDisk,
-		arbreUpdate,
 	)
-	footer := container.NewVBox(
-		label,
+	header := container.NewVBox(
+		cRetourLabel,
 	)
-	c := container.New(layout.NewBorderLayout(header, footer, lefter, nil), header, footer, lefter, listPeerName)
-	w.SetContent(c)
-	w.ShowAndRun()
+
+	cfileListe := container.New(layout.NewBorderLayout(retourArbo, nil, nil, nil), retourArbo, fileList)
+	c := container.New(layout.NewBorderLayout(header, nil, lefter, nil), header, lefter, cfileListe)
+	windows.SetContent(c)
 }
 
-func getListUserGraphic(w fyne.Window) {
-	//renvoyer la liste des pairs
+func uploadeFileGraphic() *fyne.Container {
+	path = "tmp/users/"
+
+	fileList := widget.NewList(
+		func() int {
+			files, _ := os.ReadDir(path)
+			return len(files)
+		},
+		func() fyne.CanvasObject {
+			return container.NewVBox(
+				widget.NewLabel("Name"),
+				widget.NewButton("Supprimer le fichier", nil),
+			)
+		},
+
+		func(id widget.ListItemID, object fyne.CanvasObject) {
+			files, _ := os.ReadDir(path)
+			container := object.(*fyne.Container)
+			button := container.Objects[0].(*widget.Button)
+			label := container.Objects[1].(*widget.Label)
+			button.SetText("Supprimer le fichier")
+			label.SetText(files[id].Name())
+		},
+	)
+
+	fileList.OnSelected = func(id widget.ListItemID) {
+		files, _ := os.ReadDir(path)
+		file := files[id]
+		if file.IsDir() {
+			oldpath = path
+			path += file.Name()
+		}
+		fileList.Refresh()
+	}
+
+	retourArbo := widget.NewButton("...", func() {
+		path = oldpath
+		oldpath = filepath.Dir(path)
+		fileList.Refresh()
+	})
+
+	cfileListe := container.New(layout.NewBorderLayout(retourArbo, nil, nil, nil), retourArbo, fileList)
+	c := container.New(layout.NewBorderLayout(nil, nil, nil, nil), cfileListe)
+	return c
 }
 
 func downloadFile(connexion *net.UDPConn) {

@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+import . "projet-protocoles-internet/Tools"
+
 type RequestTime struct {
 	TIME    int64
 	REQUEST RequestUDPExtension //	time.Now().UnixMilli()
@@ -23,8 +25,6 @@ var root arbre.Noeud
 func GetRoot() *arbre.Noeud {
 	return &root
 }
-
-var IP_ADRESS = "81.194.27.155:8443"
 
 func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExtension) {
 

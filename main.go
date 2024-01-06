@@ -46,7 +46,6 @@ func main() {
 	channel := make(chan RequestUDPExtension)
 
 	go startClient(channel, ConnUDP, ServeurPeer)
-
 	UI.InitPage()
 
 	if err != nil {

@@ -3,7 +3,6 @@ package udppeer
 import (
 	"fmt"
 	"golang.org/x/crypto/sha3"
-	"log"
 	"math/rand"
 	"net"
 	. "projet-protocoles-internet/Tools"
@@ -19,10 +18,6 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 	case HelloReply: //
 		fmt.Println("HELLO REPLY RECU")
-		/*hasher := sha256.New()
-		hash := hasher.Sum(nil)
-		_, _ = SendUdpRequest(connUdp, NewRequestUDPExtension(receiveStruct.Id, RootRequest, int16(len(hash)), hash), IP_ADRESS, "ROOT Request")
-		*/
 	case PublicKeyReply:
 		/* stocker la cle crypto */
 
@@ -34,17 +29,16 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
 		rootRequest := NewRequestUDPExtension(globalID, RootRequest, int16(len(body)), body)
 		_, _ = SendUdpRequest(connUdp, rootRequest, IP_ADRESS, "ROOT Request")
-		*/
+
 		requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body)), receiveStruct.Body)
 		SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
-
+		*/
 	case Datum:
-		datumTree(connUdp, receiveStruct)
+		go datumTree(connUdp, receiveStruct)
 		time.Sleep(time.Millisecond * 20)
 
 	case NoDatum:
-		log.Fatal("no datum")
-		//TODO à changer
+		fmt.Println("NO DATUM")
 	}
 
 	//} else {

@@ -5,9 +5,11 @@ import "net/http"
 /* EDIT VALUE */
 
 var ClientRestAPI *http.Client
-var ConnUDP = SetListen(4333)
+var ConnUDP = SetListen(4653)
 
 var Name = "0000MOOON"
+var IP_ADRESS = "81.194.27.155:8443"
+var IP_ADRESS_SEND = "81.194.27.155:8443"
 
 /* EDIT VALUE */
 

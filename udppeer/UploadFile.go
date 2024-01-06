@@ -1,29 +1,26 @@
 package udppeer
 
 import (
-	"fmt"
 	"projet-protocoles-internet/udppeer/arbre"
 )
 
-var racine arbre.Noeud
+var racine *arbre.Noeud
 
 func InitRoot() {
+	racine = &arbre.Noeud{}
 	racine.Type = 2
-	racine, err := arbre.ParcourirRepertoire("tmp/user")
-	if err != nil {
-		fmt.Println("Creation de l'arbre impossible")
-	}
+	racine, _ = arbre.ParcourirRepertoire("tmp/user")
 	arbre.AfficherArbre(racine, 0)
 }
 
 func GetRacine() *arbre.Noeud {
-	return &racine
+	return racine
 }
 
 func getNoeudFromHash(hash []byte) *arbre.Noeud {
 	var queue []*arbre.Noeud
 
-	queue = append(queue, &racine)
+	queue = append(queue, racine)
 	for len(queue) > 0 {
 		currentNode := queue[0]
 		queue = queue[1:]
