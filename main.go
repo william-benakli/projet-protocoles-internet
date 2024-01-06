@@ -61,6 +61,4 @@ func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn,
 	//on envoie Hello
 	go RemissionPaquets(connUDP, IP_ADRESS)
 	go SendUDPPacketFromResponse(connUDP, channel)
-	go MaintainConnexion(connUDP, ServeurPeer)
-
 }

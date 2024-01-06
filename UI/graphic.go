@@ -64,6 +64,7 @@ func LoginPage() {
 		ServeurPeer, _ := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 		SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
 		PageMain()
+		go MaintainConnexion(ConnUDP, ServeurPeer)
 	})
 
 	boxLogin := container.New(layout.NewVBoxLayout(), labelWelcome, input, layout.NewSpacer(), login)
@@ -78,7 +79,7 @@ func PageMain() {
 	windows.CenterOnScreen()
 	windows.FixedSize()
 
-	labelWelcome := widget.NewLabel("Bienvenue sur le projet PEERS " + Name[4:])
+	labelWelcome := widget.NewLabel("Bienvenue sur le projet PEERS " + Name)
 	contentCenter := container.New(layout.NewCenterLayout(), labelWelcome)
 
 	tabs := container.NewAppTabs(
