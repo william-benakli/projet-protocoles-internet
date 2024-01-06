@@ -2,6 +2,15 @@ package Tools
 
 import "net/http"
 
+/* EDIT VALUE */
+
+var ClientRestAPI *http.Client
+var ConnUDP = SetListen(4333)
+
+var Name = "0000MOOON"
+
+/* EDIT VALUE */
+
 /* REQUEST */
 const (
 	HelloRequest     uint8 = 2
@@ -69,8 +78,3 @@ const (
 const REMISSION = 3
 const TempsRemissionMiliSeconde = 2
 const ChunkSize = 1024
-
-var ClientRestAPI *http.Client
-var ConnUDP = SetListen(4333)
-
-var Name = "0000MOOON"

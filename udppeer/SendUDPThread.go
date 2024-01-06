@@ -32,6 +32,8 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 
 		receiveStruct, ok := <-channel
 
+		PrintRequest(receiveStruct, " RECEIVED ")
+
 		if !ok {
 			fmt.Println("Channel closed. Exiting receiver.")
 			return
@@ -40,6 +42,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 			continue
 		}
 
+		fmt.Println(" LISTE ")
 		listIdDejaVu = append(listIdDejaVu, receiveStruct.Id)
 
 		if receiveStruct.Type < 128 {
@@ -47,6 +50,9 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 		} else {
 			receiveResponse(connUdp, receiveStruct)
 		}
+
+		fmt.Println(" SORTIE ")
+
 	}
 
 }

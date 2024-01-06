@@ -2,6 +2,7 @@ package udppeer
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net"
 	. "projet-protocoles-internet/Tools"
@@ -51,20 +52,25 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 	hashGetDatum := make([]byte, 0)
 	copy(hashGetDatum, receiveStruct.Body[32:])
 
-	currentNode := getNoeudFromHash(hashGetDatum)
+	fmt.Println("TEST 0 ")
 
+	currentNode := getNoeudFromHash(hashGetDatum)
+	fmt.Println("TEST 1 ")
 	if currentNode == nil {
 		requestDatum := NewRequestUDPExtension(globalID, NoDatum, 0, make([]byte, 0))
 		go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "NO DATUM")
 		return
 	}
+	fmt.Println("TEST 2 ")
 
 	body := make([]byte, 0)
 	body = append(body, currentNode.HashReceive...)
 
 	if currentNode.Type == ChunkType {
 		/* BODY [hash, type, data] */
-		hashCalculate := sha256.Sum256(receiveStruct.Body[33:])
+		hashCalculate := currentNode.HashReceive //sha256.Sum256(receiveStruct.Body[33:])
+
+		fmt.Printf("%5.s\n", hex.EncodeToString(hashCalculate))
 
 		if !arbre.CompareHashes(hashCalculate[:], hashGetDatum) {
 			fmt.Println("PAS BON HASH 0")
@@ -74,15 +80,16 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		body = append(body, 0)
 		body = append(body, currentNode.Data...)
 
+		fmt.Println("TEST 3 CHUNCK ")
+
 	} else if currentNode.Type == BigFileType {
 
-		hashCalculate := sha256.Sum256(receiveStruct.Body[33:])
+		hashCalculate := currentNode.HashReceive
 
 		if !arbre.CompareHashes(hashCalculate[:], hashGetDatum) {
 			//requestDatum := NewRequestUDPExtension(globalID, Datum, int16(len(hashGetDatum)), hashGetDatum) // TODO constante
 			//_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 			fmt.Println("PAS BON HASH BF")
-
 			return
 		}
 
@@ -92,18 +99,22 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		for i := 0; i < len(currentNode.Fils); i++ {
 			body = append(body, currentNode.Fils[i].HashReceive...)
 		}
+		fmt.Println("TEST 4 BIGFILE")
+
 	} else if currentNode.Type == DirectoryType {
 
-		hashCalculate := make([]byte, 0)
+		fmt.Println("TEST 5 DIR")
 
-		sha := sha256.Sum256(hashCalculate[:])
-		if !arbre.CompareHashes(sha[:], hashGetDatum) {
+		hashCalculate := currentNode.HashReceive
+
+		if !arbre.CompareHashes(hashCalculate, hashGetDatum) {
 			//requestDatum := NewRequestUDPExtension(globalID, Datum, int16(len(hashGetDatum)), hashGetDatum) // TODO constante
 			//_, _ = SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 			fmt.Println("PAS BON HASH DIR")
 
 			return
 		}
+		fmt.Println("TEST 6 DIR")
 
 		body = append(body, 2)
 		body = append(body, currentNode.Data...)
@@ -114,12 +125,15 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 			body = append(body, arr[:]...)
 			body = append(body, currentNode.Fils[i].HashReceive...)
 		}
+		fmt.Println("TEST 7 DIR")
+
 	} else {
 		error := "type non defini "
 		requestDatum := NewRequestUDPExtension(globalID, Error, int16(len(error)), []byte(error))
 		SendUdpRequest(connexion, requestDatum, IP_ADRESS, "NO DATUM")
 	}
 
-	requestDatum := NewRequestUDPExtension(globalID, Datum, int16(len(body)+32), body) // TODO constante
+	fmt.Println("Envoie du datum")
+	requestDatum := NewRequestUDPExtension(globalID, Datum, int16(len(body)), body)
 	SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 }

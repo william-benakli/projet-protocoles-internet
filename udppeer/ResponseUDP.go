@@ -86,15 +86,15 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 			start_name := 33 + i*64
 			//	//fmt.Println(removeEmpty(string(receiveStruct.Body[start_name : start_name+32])))
 
-			if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" { // || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "images" {
+			//if removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) != "videos" { // || removeEmpty(string(receiveStruct.Body[start_name:start_name+32])) == "images" {
 
-				fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: removeEmpty(string(receiveStruct.Body[start_name : start_name+32])), ID: i}
-				go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
+			fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[start_name+32 : start_name+64], Data: make([]byte, 0), NAME: removeEmpty(string(receiveStruct.Body[start_name : start_name+32])), ID: i}
+			go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
 
-				requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body[start_name+32:start_name+64])), receiveStruct.Body[start_name+32:start_name+64])
-				SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
+			requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(receiveStruct.Body[start_name+32:start_name+64])), receiveStruct.Body[start_name+32:start_name+64])
+			SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
 
-			}
+			//}
 		}
 		go SetType(&root, receiveStruct.Body[0:32], 2)
 
@@ -131,61 +131,3 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 		fmt.Println("Cas non traitable")
 	}
 }
-
-/*
-func Remplir(root *Noeud, connUdp *net.UDPConn) bool {
-	var queue []*Noeud
-	queue = append(queue, root)
-
-	for len(queue) > 0 {
-		currentNode := queue[0]
-		queue = queue[1:]
-
-		if currentNode.Type == 0 {
-			////	fmt.Println(len(currentNode.Data))
-			if len(currentNode.Data) == 0 {
-				//	fmt.Printf("%.5s %s", hex.EncodeToString(currentNode.HashReceive), "        ")
-
-				requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(currentNode.HashReceive)), currentNode.HashReceive)
-				SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
-			}
-		}
-
-		for _, child := range currentNode.Fils {
-			queue = append(queue, child)
-		}
-	}
-
-	return false // Retourne faux si aucun nœud avec le hash spécifié n'est trouvé
-}
-
-func VerifieNotEmpty(root *Noeud) int {
-	cp := 0
-	var queue []*Noeud
-	queue = append(queue, root)
-
-	for len(queue) > 0 {
-		currentNode := queue[0]
-		queue = queue[1:]
-
-		if currentNode.Type == 1 {
-			cp = cp + 1
-
-		}
-		//	if currentNode.Type == 0 {
-		////	fmt.Println(len(currentNode.Data))
-		//		if len(currentNode.Data) == 0 {
-		//	//fmt.Println("test")
-		//		if currentNode.NAME != "empty.txt" {
-		//		}
-		//	}
-		//}
-
-		for _, child := range currentNode.Fils {
-			queue = append(queue, child)
-		}
-	}
-
-	return cp
-}
-*/

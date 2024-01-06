@@ -42,6 +42,7 @@ func InitPage() {
 		users = restpeer.GetRestPeerNames(ClientRestAPI)
 		w.Resize(fyne.NewSize(801, 600))
 	})
+
 	butonDownload := widget.NewButton("Telecharger", func() {
 		fmt.Println("telechargement en cours... : ", userClicked)
 		downloadFile(ConnUDP)
@@ -63,14 +64,21 @@ func InitPage() {
 
 	listPeerName.OnSelected = func(index int) {
 		if index >= 0 && index < len(users) {
-			SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), IP_ADRESS, "MAIN")
 			userClicked = users[index]
 			IP_ADRESS = restpeer.GetAdrFromNamePeers(userClicked)
+			fmt.Println(IP_ADRESS, " SELECTED ADDRESSE")
+			SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(Name)), []byte(Name)), IP_ADRESS, "MAIN")
 		}
 	}
+
 	butonDownloadFileOnDisk := widget.NewButton("Mettre à jour les fichiers", func() {
 		fmt.Println("telechargement en cours ", userClicked)
 		arbre.BuildImage(GetRoot(), "tmp/peers/"+userClicked)
+	})
+
+	arbreUpdate := widget.NewButton("Mettre à jour mon arbre", func() {
+		fmt.Println("Mise à jour de l'arbre ", userClicked)
+		InitRoot()
 	})
 
 	header := container.NewVBox(
@@ -79,6 +87,7 @@ func InitPage() {
 	lefter := container.NewVBox(
 		butonDownload,
 		butonDownloadFileOnDisk,
+		arbreUpdate,
 	)
 	footer := container.NewVBox(
 		label,
