@@ -86,14 +86,16 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 
 	}
 
-	PrintRequest(RequestUDP, "SEND")
+	PrintRequest(RequestUDP, "SEND: "+from)
 }
 
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
 	for tick := range time.Tick(30 * time.Second) {
-		byteName := make([]byte, len(Name))
+		byteName := make([]byte, 4)
 		byteName[0] = 0
 		byteName[1] = 0
+		byteName[2] = 0
+		byteName[3] = 0
 		byteName = append(byteName, []byte(Name)...)
 		SendUdpRequest(connUdp, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], "MaintainConnexion")
 		fmt.Println(tick, "maintien de la connexion avec le serveur")

@@ -221,7 +221,9 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 		}
 
 		for i := range noeud.Fils {
-			body = append(body, []byte(noeud.Fils[i].NAME)...)
+			var byteArray [32]byte
+			copy(byteArray[:], noeud.Fils[i].NAME)
+			body = append(body, byteArray[:]...)
 			body = append(body, noeud.Fils[i].HashReceive...)
 		}
 		bodyConvert := sha256.Sum256(body)

@@ -57,10 +57,13 @@ func LoginPage() {
 		} else {
 			Name = input.Text
 		}
-		byteName := make([]byte, len(Name))
+		byteName := make([]byte, 4)
 		byteName[0] = 0
 		byteName[1] = 0
+		byteName[2] = 0
+		byteName[3] = 0
 		byteName = append(byteName, []byte(Name)...)
+		fmt.Println(byteName)
 		ServeurPeer, _ := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 		SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
 		PageMain()
@@ -156,9 +159,11 @@ func PageUser() {
 	})
 
 	Hello := widget.NewButton("Envoyer Hello", func() {
-		byteName := make([]byte, len(Name))
+		byteName := make([]byte, 4)
 		byteName[0] = 0
 		byteName[1] = 0
+		byteName[2] = 0
+		byteName[3] = 0
 		byteName = append(byteName, []byte(Name)...)
 		rq := NewRequestUDPExtension(GetGlobalID()+1, HelloRequest, int16(len(byteName)), byteName)
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")

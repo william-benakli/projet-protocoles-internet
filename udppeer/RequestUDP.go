@@ -7,6 +7,7 @@ import (
 	"net"
 	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/udppeer/arbre"
+	"sort"
 )
 
 func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
@@ -79,6 +80,8 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 
 		body = append(body, BigFileType)
 
+		sort.Sort(arbre.ByID(currentNode.Fils))
+
 		for i := 0; i < len(currentNode.Fils); i++ {
 			body = append(body, currentNode.Fils[i].HashReceive...)
 		}
@@ -90,9 +93,11 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		fmt.Println("TEST 5 DIR")
 		body = append(body, DirectoryType)
 
+		sort.Sort(arbre.ByID(currentNode.Fils))
+
 		for i := 0; i < len(currentNode.Fils); i++ {
 			var arr [32]byte
-			copy(arr[:], []byte(currentNode.Fils[i].NAME))
+			copy(arr[:], currentNode.Fils[i].NAME)
 			body = append(body, arr[:]...)
 			body = append(body, currentNode.Fils[i].HashReceive...)
 		}
@@ -105,7 +110,7 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		return
 	}
 
-	hashbody := sha256.Sum256(body)
+	hashbody := sha256.Sum256(body[32:])
 	fmt.Println(hex.EncodeToString(hashGetDatum), " ", hex.EncodeToString(hashbody[:]))
 
 	requestDatum := NewRequestUDPExtension(receiveStruct.Id, Datum, int16(len(body)), body)
