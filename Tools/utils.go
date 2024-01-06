@@ -8,7 +8,7 @@ import (
 
 /* DEBUG */
 
-var debugPrint bool = false
+var debugPrint bool = true
 
 func PrintDebug(messages ...any) {
 	if debugPrint {

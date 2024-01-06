@@ -19,7 +19,7 @@ func ListenActive(connUdp *net.UDPConn, ch chan RequestUDPExtension) {
 			fmt.Println("Erreur lors de la lecture UDP :", err)
 		} else {
 			receiveStruct := ByteToStruct(maxRequest)
-
+			ReceiveCounter += 1
 			if receiveStruct.Type >= 128 {
 				RequestTimes.Delete(receiveStruct.Id)
 			}

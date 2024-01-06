@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net"
 	. "projet-protocoles-internet/Tools"
+	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/arbre"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"sort"
 )
 
@@ -17,7 +19,22 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 	switch receiveStruct.Type {
 
 	case HelloRequest:
-		requestTOSend = requestHelloReply(receiveStruct)
+
+		rep := restpeer.GetPublicKey(ClientRestAPI, string(receiveStruct.Body))
+
+		if rep == 200 {
+			if cryptographie.VerifyHash(receiveStruct.Body, receiveStruct.Signature) {
+				requestTOSend = requestHelloReply(receiveStruct)
+			} else {
+				requestTOSend = requestErrorReply(receiveStruct, "Bad signature")
+			}
+			//verifier la cle
+		} else if rep == 204 {
+			//envoyer un
+			requestTOSend = requestHelloReply(receiveStruct)
+		} else {
+			requestTOSend = requestErrorReply(receiveStruct, "Pair inconnu")
+		}
 	case PublicKeyRequest:
 		requestTOSend = requestPublicKeyReply(receiveStruct)
 	case RootRequest:
@@ -33,6 +50,8 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 		return
 	}
 
+	fmt.Println(IP_ADRESS_SEND)
+
 	go SendUdpRequest(connexion, requestTOSend, IP_ADRESS_SEND, GetName(requestTOSend.Type))
 }
 
@@ -40,12 +59,16 @@ func requestHelloReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
 	return NewRequestUDPExtension(receiveStruct.Id, HelloReply, int16(len([]byte(Name))), []byte(Name))
 }
 
+func requestErrorReply(receiveStruct RequestUDPExtension, message string) RequestUDPExtension {
+	return NewRequestUDPExtension(receiveStruct.Id, Error, int16(len([]byte(message))), []byte(message))
+}
+
 func requestPublicKeyReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
-	return NewRequestUDPExtension(receiveStruct.Id, PublicKeyReply, 0, []byte(""))
+	return NewRequestUDPExtensionSigned(receiveStruct.Id, PublicKeyReply, 64, cryptographie.FormateKey()) // On utilise la fonction FormateKey
 }
 
 func requestRootReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
-	return NewRequestUDPExtension(receiveStruct.Id, RootReply, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
+	return NewRequestUDPExtensionSigned(receiveStruct.Id, RootReply, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
 }
 
 func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
@@ -79,11 +102,10 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 	} else if currentNode.Type == BigFileType {
 
 		body = append(body, BigFileType)
-
 		sort.Sort(arbre.ByID(currentNode.Fils))
-
 		for i := 0; i < len(currentNode.Fils); i++ {
 			body = append(body, currentNode.Fils[i].HashReceive...)
+			fmt.Println(hex.EncodeToString(currentNode.Fils[i].HashReceive))
 		}
 
 		fmt.Println("TEST 4 BIGFILE")

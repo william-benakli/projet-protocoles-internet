@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	. "projet-protocoles-internet/Tools"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"strings"
 )
 
@@ -50,6 +51,7 @@ func GetRestPeerNames(client *http.Client) []string {
 	resp, err := client.Get("https://jch.irif.fr:8443/peers/")
 
 	if err != nil {
+
 		log.Fatal("client fail to get peer Names ")
 	}
 	if resp.Body != nil {
@@ -118,6 +120,7 @@ func SendRestPeerAdresses(client *http.Client, namePeer string) []string {
 func GetAdrFromNamePeers(userName string) string {
 
 	listPeers := GetListOfPeers(ClientRestAPI, GetRestPeerNames(ClientRestAPI))
+	fmt.Println("on continue")
 
 	for i := range listPeers.ListOfPeers {
 		if listPeers.ListOfPeers[i].NameUser == userName {
@@ -128,4 +131,31 @@ func GetAdrFromNamePeers(userName string) string {
 	fmt.Println("Aucune adresse associé")
 	user, _ := GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 	return user.ListOfAddresses[0]
+}
+
+func GetPublicKey(client *http.Client, name string) int {
+	resp, err := client.Get("https://jch.irif.fr:8443/peers/" + name + "/key")
+
+	if err != nil {
+		log.Fatal("getPublicKey")
+	}
+	if resp.Body != nil {
+		if resp.StatusCode == 200 {
+			body, readIo := io.ReadAll(resp.Body)
+			if readIo != nil {
+				log.Fatal("io failed")
+			}
+			cryptographie.OtherPublicKey = cryptographie.UnFormateKey(body)
+			return 200
+		} else if resp.StatusCode == 204 {
+			fmt.Println("no key")
+			return 204
+		} else {
+			fmt.Println("pair inconnu")
+			return 404
+		}
+	} else {
+		fmt.Println("Erreur aucune nom de peers ")
+	}
+	return 404
 }

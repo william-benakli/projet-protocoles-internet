@@ -9,8 +9,8 @@ import (
 	"os"
 	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/UI"
-	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer"
+	"projet-protocoles-internet/udppeer/cryptographie"
 	"sync"
 	"time"
 )
@@ -29,36 +29,27 @@ func main() {
 		Timeout:   50 * time.Second,
 	}
 
+	cryptographie.PrivateKey = cryptographie.GeneratePrivateKey()
+	cryptographie.PublicKey = cryptographie.GetPublicKey(cryptographie.PrivateKey)
+
 	if err := os.MkdirAll("tmp/peers/", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-
 	if err := os.MkdirAll("tmp/user/", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-
 	ShowDebug()
-
 	udppeer.InitId()
 	fmt.Println("Connexion REST API terminée")
-
-	ServeurPeer, err := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 	channel := make(chan RequestUDPExtension)
-
-	go startClient(channel, ConnUDP, ServeurPeer)
+	go startClient(channel, ConnUDP)
 	UI.InitPage()
-
-	if err != nil {
-		fmt.Println("Erreur lors de la création de la connexion UDP :", err)
-		return
-	}
 
 }
 
-func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn, ServeurPeer restpeer.PeersUser) {
+func startClient(channel chan udppeer.RequestUDPExtension, connUDP *net.UDPConn) {
 	RequestTimes = sync.Map{}
 	go ListenActive(connUDP, channel)
-	//on envoie Hello
 	go RemissionPaquets(connUDP, IP_ADRESS)
 	go SendUDPPacketFromResponse(connUDP, channel)
 }

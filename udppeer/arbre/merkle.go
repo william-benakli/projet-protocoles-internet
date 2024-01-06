@@ -309,7 +309,7 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 						bigFileBody = make([]byte, 0)
 						bigFileBody = append(bigFileBody, BigFileType)
 						position = position + 1
-
+						body = append(body, bodyConvertBigFile[:]...)
 					}
 					poseCounter = poseCounter + 1
 					body = append(body, bodyConvert[:]...)

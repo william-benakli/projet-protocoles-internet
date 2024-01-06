@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"io"
@@ -15,6 +16,7 @@ import (
 	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/arbre"
+	"projet-protocoles-internet/udppeer/cryptographie"
 )
 
 import . "projet-protocoles-internet/udppeer"
@@ -65,7 +67,7 @@ func LoginPage() {
 		byteName = append(byteName, []byte(Name)...)
 		fmt.Println(byteName)
 		ServeurPeer, _ := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
-		SendUdpRequest(ConnUDP, NewRequestUDPExtension(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
+		SendUdpRequest(ConnUDP, NewRequestUDPExtensionSigned(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
 		PageMain()
 		go MaintainConnexion(ConnUDP, ServeurPeer)
 	})
@@ -85,14 +87,26 @@ func PageMain() {
 	labelWelcome := widget.NewLabel("Bienvenue sur le projet PEERS " + Name)
 	contentCenter := container.New(layout.NewCenterLayout(), labelWelcome)
 
-	tabs := container.NewAppTabs(
-		container.NewTabItem("PEERS", getListUserGraphic()),
-		container.NewTabItem("MES FICHIERS", widget.NewLabel("Vos fichiers")), //uploadeFileGraphic()),
-	)
+	OpenFile := widget.NewButton("Ajouter des fichiers à mon pair", func() {
+		dialog.ShowFileOpen(func(uri fyne.URIReadCloser, err error) {
+			if uri != nil && err == nil {
+				fmt.Println("Chemin du dossier sélectionné :", uri.URI().Path())
+				go func() {
+					destination := "tmp/user/" + filepath.Base(uri.URI().Path())
+					copyFile(uri.URI().Path(), destination)
+				}()
+			}
+		}, windows)
+	})
 
-	boxLogin := container.NewBorder(contentCenter, nil, nil, nil, tabs)
+	LoadFile := widget.NewButton("Recharger mes fichiers", func() {
+		Racine, _ = arbre.ParcourirRepertoire("tmp/user/")
+		arbre.AfficherArbre(GetRacine(), 0)
+	})
 
-	tabs.SetTabLocation(container.TabLocationLeading)
+	bottomButton := container.New(layout.NewGridLayoutWithColumns(2), OpenFile, LoadFile)
+	boxLogin := container.NewBorder(contentCenter, bottomButton, nil, nil, getListUserGraphic(), bottomButton)
+
 	windows.SetContent(boxLogin)
 }
 
@@ -144,12 +158,12 @@ func PageUser() {
 	cRetourLabel := container.New(layout.NewBorderLayout(nil, nil, retour, nil), retour, label)
 
 	PublicKey := widget.NewButton("Envoyer PublicKey", func() {
-		rq := NewRequestUDPExtension(GetGlobalID()+1, PublicKeyReply, 0, make([]byte, 0))
+		rq := NewRequestUDPExtensionSigned(GetGlobalID()+1, PublicKeyReply, 64, cryptographie.FormateKey()) // On utilise la fonction FormateKey
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
 	Root := widget.NewButton("Envoyer Root", func() {
-		rq := NewRequestUDPExtension(GetGlobalID()+1, RootRequest, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
+		rq := NewRequestUDPExtensionSigned(GetGlobalID()+1, RootRequest, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
@@ -165,7 +179,7 @@ func PageUser() {
 		byteName[2] = 0
 		byteName[3] = 0
 		byteName = append(byteName, []byte(Name)...)
-		rq := NewRequestUDPExtension(GetGlobalID()+1, HelloRequest, int16(len(byteName)), byteName)
+		rq := NewRequestUDPExtensionSigned(GetGlobalID()+1, HelloRequest, int16(len(byteName)), byteName)
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
@@ -232,52 +246,6 @@ func PageUser() {
 	windows.SetContent(c)
 }
 
-func uploadeFileGraphic() *fyne.Container {
-	path = "tmp/users/"
-
-	fileList := widget.NewList(
-		func() int {
-			files, _ := os.ReadDir(path)
-			return len(files)
-		},
-		func() fyne.CanvasObject {
-			return container.NewVBox(
-				widget.NewLabel("Name"),
-				widget.NewButton("Supprimer le fichier", nil),
-			)
-		},
-
-		func(id widget.ListItemID, object fyne.CanvasObject) {
-			files, _ := os.ReadDir(path)
-			container := object.(*fyne.Container)
-			button := container.Objects[0].(*widget.Button)
-			label := container.Objects[1].(*widget.Label)
-			button.SetText("Supprimer le fichier")
-			label.SetText(files[id].Name())
-		},
-	)
-
-	fileList.OnSelected = func(id widget.ListItemID) {
-		files, _ := os.ReadDir(path)
-		file := files[id]
-		if file.IsDir() {
-			oldpath = path
-			path += file.Name()
-		}
-		fileList.Refresh()
-	}
-
-	retourArbo := widget.NewButton("...", func() {
-		path = oldpath
-		oldpath = filepath.Dir(path)
-		fileList.Refresh()
-	})
-
-	cfileListe := container.New(layout.NewBorderLayout(retourArbo, nil, nil, nil), retourArbo, fileList)
-	c := container.New(layout.NewBorderLayout(nil, nil, nil, nil), cfileListe)
-	return c
-}
-
 func downloadFile(connexion *net.UDPConn) {
 
 	//client -> root ->
@@ -294,4 +262,28 @@ func downloadFile(connexion *net.UDPConn) {
 
 	requestDatum := NewRequestUDPExtension(GetGlobalID(), GetDatumRequest, int16(len(rootKey)), rootKey)
 	go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
+}
+
+func copyFile(src, dst string) {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		fmt.Println("Erreur lors de l'ouverture du fichier source :", err)
+		return
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		fmt.Println("Erreur lors de la création du fichier de destination :", err)
+		return
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		fmt.Println("Erreur lors de la copie :", err)
+		return
+	}
+
+	fmt.Println("Fichier copié avec succès :", dst)
 }

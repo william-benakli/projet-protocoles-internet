@@ -17,9 +17,9 @@ type RequestTime struct {
 	REQUEST RequestUDPExtension //	time.Now().UnixMilli()
 }
 
-var listIdDejaVu []int32
-
 var RequestTimes sync.Map
+
+var listIdDejaVu []int32
 var root arbre.Noeud
 
 func GetRoot() *arbre.Noeud {
@@ -32,7 +32,7 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 
 		receiveStruct, ok := <-channel
 
-		PrintRequest(receiveStruct, " RECEIVED ")
+		PrintRequest(receiveStruct, " RECEIVED "+string(ReceiveCounter))
 
 		if !ok {
 			fmt.Println("Channel closed. Exiting receiver.")
