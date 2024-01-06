@@ -38,11 +38,10 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 			fmt.Println("Channel closed. Exiting receiver.")
 			return
 		}
+
 		if containedList(listIdDejaVu, receiveStruct.Id) {
 			continue
 		}
-
-		fmt.Println(" LISTE ")
 		listIdDejaVu = append(listIdDejaVu, receiveStruct.Id)
 
 		if receiveStruct.Type < 128 {
@@ -50,8 +49,6 @@ func SendUDPPacketFromResponse(connUdp *net.UDPConn, channel chan RequestUDPExte
 		} else {
 			receiveResponse(connUdp, receiveStruct)
 		}
-
-		fmt.Println(" SORTIE ")
 
 	}
 
@@ -82,10 +79,11 @@ func RemissionPaquets(connUdp *net.UDPConn, adressPort string) {
 			if requestTime, ok := value.(RequestTime); ok {
 				if (time.Now().UnixMilli() - requestTime.TIME) > 7000 {
 					RequestTimes.Delete(key)
-					requestDatum := NewRequestUDPExtension(requestTime.REQUEST.Id, requestTime.REQUEST.Type, int16(len(requestTime.REQUEST.Body)), requestTime.REQUEST.Body)
-					SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "remissionPaquets ")
-					fmt.Println("Remission paquet ")
-					time.Sleep(time.Duration(int(rand.Int63n(50))) * time.Millisecond)
+					if requestTime.REQUEST.Type > 0 {
+						requestDatum := NewRequestUDPExtension(globalID, requestTime.REQUEST.Type, int16(len(requestTime.REQUEST.Body)), requestTime.REQUEST.Body)
+						SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "remissionPaquets ")
+						time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+					}
 				}
 			}
 			return true

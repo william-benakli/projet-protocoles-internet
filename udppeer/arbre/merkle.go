@@ -228,16 +228,16 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 		noeud.HashReceive = bodyConvert[:]
 
 	} else {
-
 		if fichierInfo.Size() <= 1024 {
-
+			//CHUNCK
 			body := make([]byte, 0)
 			body = append(body, ChunkType)
-			body = append(body, noeud.Data...)
 
 			noeud.Type = ChunkType
 			data, err := os.ReadFile(chemin)
+
 			noeud.Data = data
+			body = append(body, noeud.Data...)
 
 			bodyConvert := sha256.Sum256(body)
 			noeud.HashReceive = bodyConvert[:]
@@ -275,23 +275,54 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 				poseCounter := 0
 				position := 0
 
+				bigFileBody := make([]byte, 0)
+				bigFileBody = append(bigFileBody, BigFileType)
+
 				for i := 0; i < len(data); i += ChunkSize {
 					fin := i + ChunkSize
 					if fin > len(data) {
 						fin = len(data)
 					}
 
+					chunckBody := make([]byte, 0)
+					chunckBody = append(chunckBody, ChunkType)
+					chunckBody = append(chunckBody, data[i:fin]...)
+
+					bodyConvert := sha256.Sum256(chunckBody)
+
 					tabTempoNoeud[position].Fils = append(tabTempoNoeud[position].Fils, &Noeud{
-						Type: ChunkType,
-						Data: data[i:fin],
-						ID:   i / ChunkSize,
+						Type:        ChunkType,
+						Data:        data[i:fin],
+						HashReceive: bodyConvert[:],
+						ID:          i / ChunkSize,
 					})
-					if poseCounter == 32 {
+
+					bigFileBody = append(bigFileBody, bodyConvert[:]...)
+
+					if poseCounter == 31 {
 						poseCounter = 0
+
+						bodyConvertBigFile := sha256.Sum256(bigFileBody)
+						tabTempoNoeud[position].HashReceive = bodyConvertBigFile[:]
+						bigFileBody = make([]byte, 0)
+						bigFileBody = append(bigFileBody, BigFileType)
 						position = position + 1
+
 					}
 					poseCounter = poseCounter + 1
+					body = append(body, bodyConvert[:]...)
 				}
+
+				bigFileLast := make([]byte, 0)
+				bigFileLast = append(bigFileLast, BigFileType)
+
+				for i := 0; i < len(tabTempoNoeud); i += 1 {
+					fils := tabTempoNoeud[len(tabTempoNoeud)-1].Fils[i]
+					bigFileLast = append(bigFileLast, fils.HashReceive...)
+				}
+
+				bodyConvertBigFile := sha256.Sum256(bigFileBody)
+				tabTempoNoeud[len(tabTempoNoeud)-1].HashReceive = bodyConvertBigFile[:]
 
 			} else {
 
@@ -318,10 +349,28 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 
 				}
 			}
+			bodyConvert := sha256.Sum256(body)
+			noeud.HashReceive = bodyConvert[:]
 		}
 
 	}
 	return noeud, nil
+}
+
+func GetHashDFS(n *Noeud, hash []byte) *Noeud {
+	fmt.Println(hex.EncodeToString(n.HashReceive), " ", hex.EncodeToString(hash))
+	if CompareHashes(n.HashReceive, hash) {
+		fmt.Printf("Le nœud avec ID %d a un HashReceive correspondant.\n", n.ID)
+		return n
+	}
+	for _, fils := range n.Fils {
+		result := GetHashDFS(fils, hash)
+		if result != nil {
+			return result
+		}
+	}
+
+	return nil
 }
 
 /*

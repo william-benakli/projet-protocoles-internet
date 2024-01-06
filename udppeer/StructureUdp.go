@@ -2,6 +2,7 @@ package udppeer
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	. "projet-protocoles-internet/Tools"
 	"projet-protocoles-internet/restpeer"
@@ -29,7 +30,7 @@ func NewRequestUDPExtension(id int32, typeVal uint8, length int16, body []byte) 
 var globalID int32
 
 func InitId() {
-	globalID = 5432345
+	globalID = rand.Int31n(130450)
 }
 
 func GetGlobalID() int32 {

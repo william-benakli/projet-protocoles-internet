@@ -1,11 +1,14 @@
 package Tools
 
-import "net/http"
+import (
+	"math/rand"
+	"net/http"
+)
 
 /* EDIT VALUE */
 
 var ClientRestAPI *http.Client
-var ConnUDP = SetListen(4653)
+var ConnUDP = SetListen(rand.Intn(45000) + 3000)
 
 var Name = "0000MOOON"
 var IP_ADRESS = "81.194.27.155:8443"

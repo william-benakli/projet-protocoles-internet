@@ -1,6 +1,7 @@
 package UI
 
 import (
+	"encoding/hex"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -8,7 +9,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"io"
-	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
@@ -135,8 +135,13 @@ func PageUser() {
 
 	cRetourLabel := container.New(layout.NewBorderLayout(nil, nil, retour, nil), retour, label)
 
+	PublicKey := widget.NewButton("Envoyer PublicKey", func() {
+		rq := NewRequestUDPExtension(GetGlobalID()+1, PublicKeyReply, 0, make([]byte, 0))
+		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
+	})
+
 	Root := widget.NewButton("Envoyer Root", func() {
-		rq := NewRequestUDPExtension(GetGlobalID()+1, PublicKeyReply, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
+		rq := NewRequestUDPExtension(GetGlobalID()+1, RootRequest, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
@@ -158,6 +163,10 @@ func PageUser() {
 	butonDownloadFileOnDisk := widget.NewButton("Mettre à jour les fichiers", func() {
 		fmt.Println("telechargement en cours ", userClicked)
 		arbre.BuildImage(GetRoot(), "tmp/peers/"+userClicked)
+	})
+
+	printTree := widget.NewButton("Afficher arbre", func() {
+		arbre.AfficherArbre(GetRoot(), 0)
 	})
 
 	fileList := widget.NewList(
@@ -193,9 +202,11 @@ func PageUser() {
 	lefter := container.NewVBox(
 		Hello,
 		Root,
+		PublicKey,
 		noOP,
 		layout.NewSpacer(),
 		butonDownload,
+		printTree,
 		butonDownloadFileOnDisk,
 	)
 	header := container.NewVBox(
@@ -265,6 +276,8 @@ func downloadFile(connexion *net.UDPConn) {
 		return
 	}
 
-	requestDatum := NewRequestUDPExtension(rand.Int31(), GetDatumRequest, int16(len(rootKey)), rootKey)
+	fmt.Println(hex.EncodeToString(rootKey) + "####################### ROOT KEYYYYYYYYY")
+
+	requestDatum := NewRequestUDPExtension(GetGlobalID(), GetDatumRequest, int16(len(rootKey)), rootKey)
 	go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 }
