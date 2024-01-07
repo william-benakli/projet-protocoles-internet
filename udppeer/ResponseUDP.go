@@ -2,7 +2,6 @@ package udppeer
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"net"
 	. "projet-protocoles-internet/Tools"
@@ -15,7 +14,6 @@ import . "projet-protocoles-internet/udppeer/arbre"
 
 func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 
-	//	if contains(LastPaquets, receiveStruct.Id) {
 	switch receiveStruct.Type {
 
 	case HelloReply: //
@@ -25,9 +23,11 @@ func receiveResponse(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 		rep := restpeer.GetPublicKey(ClientRestAPI, RemoveEmpty(string(receiveStruct.Body)))
 
 		if rep == 200 {
-			if !cryptographie.VerifyHash(receiveStruct.Body, receiveStruct.Signature) {
-				requestTOSend := requestErrorReply(receiveStruct, "Bad signature")
-				go SendUdpRequest(connUdp, requestTOSend, IP_ADRESS_SEND, GetName(requestTOSend.Type))
+			if len(receiveStruct.Signature) > 0 {
+				if !cryptographie.VerifyHash(receiveStruct.Body, receiveStruct.Signature) {
+					requestTOSend := requestErrorReply(receiveStruct, "Bad signature")
+					go SendUdpRequest(connUdp, requestTOSend, IP_ADRESS_SEND, GetName(requestTOSend.Type))
+				}
 			}
 		}
 
@@ -57,9 +57,6 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 	hashFromRequete := receiveStruct.Body[0:32]
 	hashCalculate := sha256.Sum256(receiveStruct.Body[32:])
 
-	fmt.Println(hex.EncodeToString(hashFromRequete), " ", hex.EncodeToString(hashCalculate[:]))
-	fmt.Println(receiveStruct.Body)
-
 	if !CompareHashes(hashFromRequete, hashCalculate[:]) {
 		PrintDebug("Hash incorrect")
 		requestDatum := NewRequestUDPExtension(globalID, Error, int16(len("Bad datum")), []byte("Bad datum"))
@@ -80,7 +77,6 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 			go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
 
 			fmt.Println("Envoie du datum")
-			fmt.Println("Hash bigfile / chunck / rep ############# ", hex.EncodeToString(receiveStruct.Body[start_name+32:start_name+64]))
 
 			requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[start_name+32:start_name+64])), receiveStruct.Body[start_name+32:start_name+64])
 			SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")
@@ -100,8 +96,8 @@ func datumTree(connUdp *net.UDPConn, receiveStruct RequestUDPExtension) {
 			fils := &Noeud{Fils: make([]*Noeud, 0), HashReceive: receiveStruct.Body[startName : startName+32], Data: make([]byte, 0), ID: i}
 			go AddNodeFromHash(&root, receiveStruct.Body[0:32], fils)
 
-			fmt.Println("Envoie du datum")
-			fmt.Println("Hash chunck #############", hex.EncodeToString(receiveStruct.Body[startName:startName+32]))
+			//fmt.Println("Envoie du datum")
+			//fmt.Println("Hash chunck #############", hex.EncodeToString(receiveStruct.Body[startName:startName+32]))
 
 			requestDatum := NewRequestUDPExtension(globalID, GetDatumRequest, int16(len(receiveStruct.Body[startName:startName+32])), receiveStruct.Body[startName:startName+32])
 			SendUdpRequest(connUdp, requestDatum, IP_ADRESS, "DATUM")

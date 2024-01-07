@@ -9,10 +9,10 @@ import (
 
 /* DEBUG */
 
-var debugPrint bool = true
+var DebugPrint bool = true
 
 func PrintDebug(messages ...any) {
-	if debugPrint {
+	if DebugPrint {
 		fmt.Println("# DEBUG # ")
 		for message := range messages {
 			if &message != nil {
@@ -23,11 +23,11 @@ func PrintDebug(messages ...any) {
 }
 
 func HideDebug() {
-	debugPrint = false
+	DebugPrint = false
 }
 
 func ShowDebug() {
-	debugPrint = true
+	DebugPrint = true
 }
 
 func SetListen(port int) *net.UDPConn {

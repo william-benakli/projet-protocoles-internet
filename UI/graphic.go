@@ -1,7 +1,6 @@
 package UI
 
 import (
-	"encoding/hex"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -65,7 +64,7 @@ func LoginPage() {
 		byteName[2] = 0
 		byteName[3] = 0
 		byteName = append(byteName, []byte(Name)...)
-		fmt.Println(byteName)
+
 		ServeurPeer, _ := restpeer.GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 		SendUdpRequest(ConnUDP, NewRequestUDPExtensionSigned(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], " FIRST CONNEXION JULIUZS")
 		PageMain()
@@ -100,7 +99,7 @@ func PageMain() {
 	})
 
 	LoadFile := widget.NewButton("Recharger mes fichiers", func() {
-		Racine, _ = arbre.ParcourirRepertoire("tmp/user/")
+		Racine, _ = arbre.ParcourirRepertoire2("tmp/user/")
 		arbre.AfficherArbre(GetRacine(), 0)
 	})
 
@@ -248,7 +247,6 @@ func PageUser() {
 
 func downloadFile(connexion *net.UDPConn) {
 
-	//client -> root ->
 	get, err := ClientRestAPI.Get("https://jch.irif.fr:8443/peers/" + userClicked + "/root")
 	if err != nil {
 		return
@@ -257,8 +255,6 @@ func downloadFile(connexion *net.UDPConn) {
 	if err != nil {
 		return
 	}
-
-	fmt.Println(hex.EncodeToString(rootKey) + "####################### ROOT KEYYYYYYYYY")
 
 	requestDatum := NewRequestUDPExtension(GetGlobalID(), GetDatumRequest, int16(len(rootKey)), rootKey)
 	go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")

@@ -28,7 +28,7 @@ func NewRequestUDPExtension(id int32, typeVal uint8, length int16, body []byte) 
 }
 
 func NewRequestUDPExtensionSigned(id int32, typeVal uint8, length int16, body []byte) RequestUDPExtension {
-	fmt.Println(length, "LENGHT aaaaaaaaaaa")
+
 	buffer := make([]byte, 7+int(len(body)))
 	buffer[0] = byte(id >> 24)
 	buffer[1] = byte(id >> 16)
@@ -116,8 +116,7 @@ func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adress
 		RequestTimes.Store(RequestUDP.Id, TimeRequestUDP)
 	}
 
-	PrintRequest(RequestUDP, "SEND: "+string(rune(SendCounter))+from)
-	SendCounter += 1
+	PrintRequest(RequestUDP, "SEND: "+from)
 }
 
 func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
@@ -134,11 +133,12 @@ func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
 }
 
 func PrintRequest(requestUdp RequestUDPExtension, status string) {
-	fmt.Println("                 ", status)
-	fmt.Println("ID :", requestUdp.Id)
-	fmt.Println("TYPE :", GetName(requestUdp.Type), "(", requestUdp.Type, ")")
-	fmt.Printf("NAME : %s %d\n", string(requestUdp.Body), len(requestUdp.Body))
-	fmt.Println("LENGTH :", requestUdp.Length)
-	fmt.Println("                 ")
-
+	if DebugPrint {
+		fmt.Println("                 ", status)
+		fmt.Println("ID :", requestUdp.Id)
+		fmt.Println("TYPE :", GetName(requestUdp.Type), "(", requestUdp.Type, ")")
+		fmt.Printf("NAME : %20.s %d\n", string(requestUdp.Body), len(requestUdp.Body))
+		fmt.Println("LENGTH :", requestUdp.Length)
+		fmt.Println("                 ")
+	}
 }

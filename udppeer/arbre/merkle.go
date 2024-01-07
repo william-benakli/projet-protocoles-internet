@@ -163,12 +163,10 @@ func AddNodeFromHash(root *Noeud, hash []byte, noeudToAdd *Noeud) {
 		queue = queue[1:]
 
 		// Vérifie si le nœud actuel a le hash recherché
-		//fmt.Println(hex.EncodeToString(currentNode.HashReceive), " avec ", hex.EncodeToString(hash))
 
 		if CompareHashes(currentNode.HashReceive, hash) {
 			currentNode.Fils = append(currentNode.Fils, noeudToAdd)
 			currentNode.Type = 1
-			//fmt.Println("Hash trouvé j'ajoute")
 			return
 		}
 
@@ -186,14 +184,10 @@ func AddNodeFromHash(root *Noeud, hash []byte, noeudToAdd *Noeud) {
 // compareHashes compare deux slices de bytes (hashes).
 func CompareHashes(hash1, hash2 []byte) bool {
 	if len(hash1) != len(hash2) {
-		//fmt.Println("lenght hash  ", len(hash1), " != ", len(hash2))
-		//fmt.Println(hex.EncodeToString(hash1), " ", hex.EncodeToString(hash2))
 		return false
 	}
 	for i, b := range hash1 {
 		if b != hash2[i] {
-			//fmt.Println("different")
-			//fmt.Println(hex.EncodeToString(hash1), " ", hex.EncodeToString(hash2))
 			return false
 		}
 	}
@@ -530,7 +524,6 @@ func ParcourirRepertoire(chemin string) (*Noeud, error) {
 }
 
 func GetHashDFS(n *Noeud, hash []byte) *Noeud {
-	fmt.Println(hex.EncodeToString(n.HashReceive), " ", hex.EncodeToString(hash))
 	if CompareHashes(n.HashReceive, hash) {
 		fmt.Printf("Le nœud avec ID %d a un HashReceive correspondant.\n", n.ID)
 		return n

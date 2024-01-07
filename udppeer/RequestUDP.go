@@ -1,8 +1,6 @@
 package udppeer
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"net"
 	. "projet-protocoles-internet/Tools"
@@ -23,17 +21,18 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 		rep := restpeer.GetPublicKey(ClientRestAPI, string(receiveStruct.Body))
 
 		if rep == 200 {
-			if cryptographie.VerifyHash(receiveStruct.Body, receiveStruct.Signature) {
-				requestTOSend = requestHelloReply(receiveStruct)
-			} else {
-				requestTOSend = requestErrorReply(receiveStruct, "Bad signature")
+			if (len(receiveStruct.Signature)) > 0 {
+				if cryptographie.VerifyHash(receiveStruct.Body, receiveStruct.Signature) {
+					requestTOSend = requestHelloReply(receiveStruct)
+				} else {
+					requestTOSend = requestErrorReply(receiveStruct, "Bad signature")
+				}
 			}
-			//verifier la cle
 		} else if rep == 204 {
-			//envoyer un
 			requestTOSend = requestHelloReply(receiveStruct)
 		} else {
-			requestTOSend = requestErrorReply(receiveStruct, "Pair inconnu")
+			requestTOSend = requestHelloReply(receiveStruct)
+			//requestTOSend = requestErrorReply(receiveStruct, "Pair inconnu")
 		}
 	case PublicKeyRequest:
 		requestTOSend = requestPublicKeyReply(receiveStruct)
@@ -72,14 +71,8 @@ func requestRootReply(receiveStruct RequestUDPExtension) RequestUDPExtension {
 }
 
 func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
-
 	hashGetDatum := receiveStruct.Body
-
-	fmt.Println("TEST 0 ")
-
 	currentNode := arbre.GetHashDFS(GetRacine(), hashGetDatum)
-
-	fmt.Println("TEST 1 ")
 	if currentNode == nil {
 		requestDatum := NewRequestUDPExtension(receiveStruct.Id, NoDatum, 0, make([]byte, 0))
 		go SendUdpRequest(connexion, requestDatum, IP_ADRESS_SEND, "NO DATUM")
@@ -88,8 +81,6 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 
 	fmt.Println(currentNode.NAME, currentNode.Type, currentNode.ID)
 
-	fmt.Println("TEST 2 ")
-
 	body := make([]byte, 0)
 	body = append(body, currentNode.HashReceive...)
 
@@ -97,22 +88,14 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		/* BODY [hash, type, data] */
 		body = append(body, ChunkType)
 		body = append(body, currentNode.Data...)
-		fmt.Println("TEST 3 CHUNCK ")
-
 	} else if currentNode.Type == BigFileType {
 
 		body = append(body, BigFileType)
 		sort.Sort(arbre.ByID(currentNode.Fils))
 		for i := 0; i < len(currentNode.Fils); i++ {
 			body = append(body, currentNode.Fils[i].HashReceive...)
-			fmt.Println(hex.EncodeToString(currentNode.Fils[i].HashReceive))
 		}
-
-		fmt.Println("TEST 4 BIGFILE")
-
 	} else if currentNode.Type == DirectoryType {
-
-		fmt.Println("TEST 5 DIR")
 		body = append(body, DirectoryType)
 
 		sort.Sort(arbre.ByID(currentNode.Fils))
@@ -123,18 +106,12 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 			body = append(body, arr[:]...)
 			body = append(body, currentNode.Fils[i].HashReceive...)
 		}
-		fmt.Println("TEST 7 DIR")
-
 	} else {
 		error := "type non defini "
 		requestDatum := NewRequestUDPExtension(receiveStruct.Id, Error, int16(len(error)), []byte(error))
 		SendUdpRequest(connexion, requestDatum, IP_ADRESS_SEND, "NO DATUM")
 		return
 	}
-
-	hashbody := sha256.Sum256(body[32:])
-	fmt.Println(hex.EncodeToString(hashGetDatum), " ", hex.EncodeToString(hashbody[:]))
-
 	requestDatum := NewRequestUDPExtension(receiveStruct.Id, Datum, int16(len(body)), body)
 	SendUdpRequest(connexion, requestDatum, IP_ADRESS_SEND, "DATUM")
 }

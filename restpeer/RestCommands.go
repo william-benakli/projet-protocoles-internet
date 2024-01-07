@@ -120,15 +120,12 @@ func SendRestPeerAdresses(client *http.Client, namePeer string) []string {
 func GetAdrFromNamePeers(userName string) string {
 
 	listPeers := GetListOfPeers(ClientRestAPI, GetRestPeerNames(ClientRestAPI))
-	fmt.Println("on continue")
 
 	for i := range listPeers.ListOfPeers {
 		if listPeers.ListOfPeers[i].NameUser == userName {
-			fmt.Println(listPeers.ListOfPeers[i].ListOfAddresses[0], " #############")
 			return listPeers.ListOfPeers[i].ListOfAddresses[0]
 		}
 	}
-	fmt.Println("Aucune adresse associé")
 	user, _ := GetMasterAddresse(ClientRestAPI, "https://jch.irif.fr:8443/peers/jch.irif.fr/addresses")
 	return user.ListOfAddresses[0]
 }
