@@ -1,0 +1,787 @@
+Text Compare!
+
+func ParcourirRepertoire(chemin string) (*Noeud, error) {
+
+	
+
+func ParcourirRepertoire2(chemin string) (*Noeud, error) {
+
+        fichierInfo, err := os.Stat(chemin)
+
+	
+
+        fichierInfo, err := os.Stat(chemin)
+
+        if err != nil {
+
+	
+
+        if err != nil {
+
+                return nil, err
+
+	
+
+                return nil, err
+
+        }
+
+	
+
+        }
+
+	
+
+        noeud := &Noeud{NAME: fichierInfo.Name()}
+
+	
+
+        noeud := &Noeud{NAME: fichierInfo.Name()}
+
+	
+
+        if fichierInfo.IsDir() {
+
+	
+
+        if fichierInfo.IsDir() {
+
+                noeud.Type = DirectoryType
+
+	
+
+                noeud.Type = DirectoryType
+
+	
+
+                body := make([]byte, 0)
+
+	
+
+                body = append(body, DirectoryType)
+
+	
+
+	
+
+                fichiers, err := os.ReadDir(chemin)
+
+	
+
+                fichiers, err := os.ReadDir(chemin)
+
+                if err != nil {
+
+	
+
+                if err != nil {
+
+                        return nil, err
+
+	
+
+                        return nil, err
+
+                }
+
+	
+
+                }
+
+	
+
+                for _, fi := range fichiers {
+
+	
+
+                for _, fi := range fichiers {
+
+                        fils, err := ParcourirRepertoire(filepath.Join(chemin, fi.Name()))
+
+	
+
+                        fils, err := ParcourirRepertoire2(filepath.Join(chemin, fi.Name()))
+
+                        if err != nil {
+
+	
+
+                        if err != nil {
+
+                                return nil, err
+
+	
+
+                                return nil, err
+
+                        }
+
+	
+
+                        }
+
+                        noeud.Fils = append(noeud.Fils, fils)
+
+	
+
+                        noeud.Fils = append(noeud.Fils, fils)
+
+                }
+
+	
+
+                }
+
+	
+
+        } else {
+
+	
+
+                noeud.Type = BigFileType
+
+	
+
+                data, err := os.ReadFile(chemin)
+
+	
+
+                if err != nil {
+
+	
+
+                        return nil, err
+
+	
+
+                }
+
+	
+
+                for i := range noeud.Fils {
+
+	
+
+                nbfilsChuck := len(data)/ChunkSize + 1
+
+                        var byteArray [32]byte
+
+	
+
+                        copy(byteArray[:], noeud.Fils[i].NAME)
+
+	
+
+                        body = append(body, byteArray[:]...)
+
+	
+
+                        body = append(body, noeud.Fils[i].HashReceive...)
+
+	
+
+                }
+
+	
+
+                bodyConvert := sha256.Sum256(body)
+
+	
+
+                noeud.HashReceive = bodyConvert[:]
+
+	
+
+	
+
+        } else {
+
+	
+
+                if fichierInfo.Size() <= 1024 {
+
+	
+
+                if nbfilsChuck > 32 {
+
+                        //CHUNCK
+
+	
+
+                        body := make([]byte, 0)
+
+	
+
+                        body = append(body, ChunkType)
+
+	
+
+	
+
+                        noeud.Type = ChunkType
+
+	
+
+                        var tabTempoNoeud []*Noeud
+
+                        data, err := os.ReadFile(chemin)
+
+	
+
+	
+
+                        noeud.Data = data
+
+	
+
+                        nbfils := nbfilsChuck/32 + 1
+
+                        body = append(body, noeud.Data...)
+
+	
+
+	
+
+	
+
+                        for i := 0; i < nbfils; i++ {
+
+	
+
+                                noeudCreate := &Noeud{Type: BigFileType, Data: make([]byte, 0), Fils: make([]*Noeud, 0)}
+
+	
+
+                                tabTempoNoeud = append(tabTempoNoeud, noeudCreate)
+
+	
+
+                                noeud.Fils = append(noeud.Fils, noeudCreate)
+
+                        bodyConvert := sha256.Sum256(body)
+
+	
+
+                        }
+
+                        noeud.HashReceive = bodyConvert[:]
+
+	
+
+	
+
+	
+
+                        poseCounter := 0
+
+                        if err != nil {
+
+	
+
+                        position := 0
+
+	
+
+	
+
+                        for i := 0; i < len(data); i += ChunkSize {
+
+	
+
+                                fin := i + ChunkSize
+
+                                fmt.Println("Chunck generation failed", err)
+
+	
+
+                                if fin > len(data) {
+
+	
+
+                                        fin = len(data)
+
+	
+
+                                }
+
+	
+
+	
+
+                                tabTempoNoeud[position].Fils = append(tabTempoNoeud[position].Fils, &Noeud{
+
+	
+
+                                        Type: ChunkType,
+
+	
+
+                                        Data: data[i:fin],
+
+	
+
+                                })
+
+	
+
+                                if poseCounter == 32 {
+
+	
+
+                                        poseCounter = 0
+
+	
+
+                                        position = position + 1
+
+	
+
+                                }
+
+	
+
+                                poseCounter = poseCounter + 1
+
+                        }
+
+	
+
+                        }
+
+	
+
+                } else {
+
+	
+
+                } else {
+
+	
+
+                        noeud.Type = BigFileType
+
+	
+
+                        for i := 0; i < len(data); i += ChunkSize {
+
+	
+
+                        body := make([]byte, 0)
+
+	
+
+                                fin := i + ChunkSize
+
+                        body = append(body, BigFileType)
+
+	
+
+	
+
+                        data, err := os.ReadFile(chemin)
+
+	
+
+                        if err != nil {
+
+	
+
+                                if fin > len(data) {
+
+	
+
+                                        fin = len(data)
+
+                                return nil, err
+
+	
+
+                                }
+
+	
+
+                                noeud.Fils = append(noeud.Fils, &Noeud{
+
+	
+
+                                        Type: ChunkType,
+
+	
+
+                                        Data: data[i:fin],
+
+	
+
+                                })
+
+                        }
+
+	
+
+                        }
+
+	
+
+                        nbfilsChuck := len(data)/ChunkSize + 1
+
+	
+
+	
+
+                        if nbfilsChuck > 32 {
+
+	
+
+	
+
+                                var tabTempoNoeud []*Noeud
+
+	
+
+	
+
+                                nbfils := nbfilsChuck/32 + 1
+
+	
+
+	
+
+                                for i := 0; i < nbfils; i++ {
+
+	
+
+                                        noeudCreate := &Noeud{Type: BigFileType, Data: make([]byte, 0), Fils: make([]*Noeud, 0), ID: i}
+
+	
+
+                                        tabTempoNoeud = append(tabTempoNoeud, noeudCreate)
+
+	
+
+                                        noeud.Fils = append(noeud.Fils, noeudCreate)
+
+	
+
+                                }
+
+	
+
+	
+
+                                poseCounter := 0
+
+	
+
+                                position := 0
+
+	
+
+	
+
+                                bigFileBody := make([]byte, 0)
+
+	
+
+                                bigFileBody = append(bigFileBody, BigFileType)
+
+	
+
+	
+
+                                for i := 0; i < len(data); i += ChunkSize {
+
+	
+
+                                        fin := i + ChunkSize
+
+	
+
+                                        if fin > len(data) {
+
+	
+
+                                                fin = len(data)
+
+	
+
+                                        }
+
+	
+
+	
+
+                                        chunckBody := make([]byte, 0)
+
+	
+
+                                        chunckBody = append(chunckBody, ChunkType)
+
+	
+
+                                        chunckBody = append(chunckBody, data[i:fin]...)
+
+	
+
+	
+
+                                        bodyConvert := sha256.Sum256(chunckBody)
+
+	
+
+	
+
+                                        tabTempoNoeud[position].Fils = append(tabTempoNoeud[position].Fils, &Noeud{
+
+	
+
+                                                Type:        ChunkType,
+
+	
+
+                                                Data:        data[i:fin],
+
+	
+
+                                                HashReceive: bodyConvert[:],
+
+	
+
+                                                ID:          i / ChunkSize,
+
+	
+
+                                        })
+
+	
+
+	
+
+                                        bigFileBody = append(bigFileBody, bodyConvert[:]...)
+
+	
+
+	
+
+                                        if poseCounter == 31 {
+
+	
+
+                                                poseCounter = 0
+
+	
+
+	
+
+                                                bodyConvertBigFile := sha256.Sum256(bigFileBody)
+
+	
+
+                                                tabTempoNoeud[position].HashReceive = bodyConvertBigFile[:]
+
+	
+
+                                                bigFileBody = make([]byte, 0)
+
+	
+
+                                                bigFileBody = append(bigFileBody, BigFileType)
+
+	
+
+                                                position = position + 1
+
+	
+
+                                                body = append(body, bodyConvertBigFile[:]...)
+
+	
+
+                                        }
+
+	
+
+                                        poseCounter = poseCounter + 1
+
+	
+
+                                        body = append(body, bodyConvert[:]...)
+
+	
+
+                                }
+
+	
+
+	
+
+                                bigFileLast := make([]byte, 0)
+
+	
+
+                                bigFileLast = append(bigFileLast, BigFileType)
+
+	
+
+	
+
+                                for i := 0; i < len(tabTempoNoeud); i += 1 {
+
+	
+
+                                        fils := tabTempoNoeud[len(tabTempoNoeud)-1].Fils[i]
+
+	
+
+                                        bigFileLast = append(bigFileLast, fils.HashReceive...)
+
+	
+
+                                }
+
+	
+
+	
+
+                                bodyConvertBigFile := sha256.Sum256(bigFileBody)
+
+	
+
+                                tabTempoNoeud[len(tabTempoNoeud)-1].HashReceive = bodyConvertBigFile[:]
+
+	
+
+	
+
+                        } else {
+
+	
+
+	
+
+                                for i := 0; i < len(data); i += ChunkSize {
+
+	
+
+                                        fin := i + ChunkSize
+
+	
+
+                                        if fin > len(data) {
+
+	
+
+                                                fin = len(data)
+
+	
+
+                                        }
+
+	
+
+	
+
+                                        chunckBody := make([]byte, 0)
+
+	
+
+                                        chunckBody = append(chunckBody, ChunkType)
+
+	
+
+                                        chunckBody = append(chunckBody, data[i:fin]...)
+
+	
+
+	
+
+                                        bodyConvert := sha256.Sum256(chunckBody)
+
+	
+
+	
+
+                                        noeud.Fils = append(noeud.Fils, &Noeud{
+
+	
+
+                                                Type:        ChunkType,
+
+	
+
+                                                Data:        data[i:fin],
+
+	
+
+                                                HashReceive: bodyConvert[:],
+
+	
+
+                                                ID:          i / ChunkSize,
+
+	
+
+                                        })
+
+	
+
+	
+
+                                        body = append(body, bodyConvert[:]...)
+
+	
+
+	
+
+                                }
+
+	
+
+                        }
+
+	
+
+                        bodyConvert := sha256.Sum256(body)
+
+	
+
+                        noeud.HashReceive = bodyConvert[:]
+
+	
+
+                }
+
+	
+
+                }
+
+	
+
+        }
+
+	
+
+        }
+
+        return noeud, nil
+
+	
+
+        return noeud, nil
+
+}
+
+	
+
+}
+
+Keyboard icon
+About
+Feedback
+Earn €25,-
+
+
+d
+d
+
+d
+d

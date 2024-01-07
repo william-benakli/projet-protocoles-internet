@@ -8,7 +8,6 @@ import (
 import . "projet-protocoles-internet/Tools"
 
 func ListenActive(connUdp *net.UDPConn, ch chan RequestUDPExtension) {
-
 	for {
 		maxRequest := make([]byte, 1024+34+50)
 		_, from, err := connUdp.ReadFromUDP(maxRequest)
@@ -23,7 +22,6 @@ func ListenActive(connUdp *net.UDPConn, ch chan RequestUDPExtension) {
 			if receiveStruct.Type >= 128 {
 				RequestTimes.Delete(receiveStruct.Id)
 			}
-
 			ch <- receiveStruct
 
 		}

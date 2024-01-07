@@ -9,7 +9,7 @@ var Racine *arbre.Noeud
 func InitRoot() {
 	Racine = &arbre.Noeud{}
 	Racine.Type = 2
-	Racine, _ = arbre.ParcourirRepertoire("tmp/user")
+	Racine, _ = arbre.ParcourirRepertoire2("tmp/user")
 	arbre.AfficherArbre(Racine, 0)
 	//arbre.BuildImage(Racine, "tmp/peers/")
 

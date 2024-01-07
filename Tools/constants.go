@@ -14,6 +14,8 @@ var Name = "MOOON"
 var IP_ADRESS = "81.194.27.155:8443"
 var IP_ADRESS_SEND = "81.194.27.155:8443"
 
+var WantBigFile bool = true
+
 /* EDIT VALUE */
 
 /* REQUEST */

@@ -27,7 +27,7 @@ func BuildImage(noeud *Noeud, chemin string) {
 
 	cheminComplet := filepath.Join(chemin, noeud.NAME)
 
-	fmt.Println(cheminComplet)
+	//fmt.Println(cheminComplet)
 
 	switch noeud.Type {
 	case ChunkType:
@@ -38,6 +38,7 @@ func BuildImage(noeud *Noeud, chemin string) {
 			}
 		}
 	case BigFileType:
+
 		bytetab := make([]byte, 0)
 		for _, child := range noeud.Fils {
 			bytetab = append(bytetab, BuildBigFile(child)...)
@@ -45,13 +46,11 @@ func BuildImage(noeud *Noeud, chemin string) {
 		//fmt.Println("tmp/peers/" + noeud.NAME)
 
 		if len(bytetab) != 0 {
-			fmt.Println(cheminComplet)
 			err := os.WriteFile(cheminComplet, bytetab, 0644)
 			if err != nil {
 				fmt.Println("Error write file bigfile", err)
 			}
 		}
-
 	case DirectoryType:
 		err := os.MkdirAll(cheminComplet, os.ModePerm)
 		if err != nil {
@@ -72,7 +71,6 @@ func (a ByID) Less(i, j int) bool { return a[i].ID < a[j].ID }
 
 func BuildBigFile(noeud *Noeud) []byte {
 	bytetab := make([]byte, 0)
-
 	sort.Sort(ByID(noeud.Fils))
 
 	for _, child := range noeud.Fils {
@@ -83,6 +81,15 @@ func BuildBigFile(noeud *Noeud) []byte {
 			bytetab = append(bytetab, BuildBigFile(child)...)
 		}
 	}
+
+	if WantBigFile == false {
+		if len(noeud.Fils) == 0 && len(noeud.Data) != 0 {
+			fmt.Println(noeud.Data)
+			fmt.Printf("name : %s len %d %s ", noeud.NAME, len(noeud.Data), noeud.Data)
+			bytetab = append(bytetab, noeud.Data...)
+		}
+	}
+
 	return bytetab
 }
 
@@ -191,6 +198,169 @@ func CompareHashes(hash1, hash2 []byte) bool {
 		}
 	}
 	return true
+}
+func ParcourirRepertoire2(chemin string) (*Noeud, error) {
+	fichierInfo, err := os.Stat(chemin)
+	if err != nil {
+		return nil, err
+	}
+
+	noeud := &Noeud{NAME: fichierInfo.Name()}
+
+	if fichierInfo.IsDir() {
+
+		body := make([]byte, 0)
+		body = append(body, DirectoryType)
+
+		noeud.Type = DirectoryType
+		fichiers, err := os.ReadDir(chemin)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fi := range fichiers {
+			fils, err := ParcourirRepertoire2(filepath.Join(chemin, fi.Name()))
+			if err != nil {
+				return nil, err
+			}
+			noeud.Fils = append(noeud.Fils, fils)
+		}
+
+		for i := range noeud.Fils {
+			var byteArray [32]byte
+			copy(byteArray[:], noeud.Fils[i].NAME)
+			body = append(body, byteArray[:]...)
+			body = append(body, noeud.Fils[i].HashReceive...)
+		}
+		bodyConvert := sha256.Sum256(body)
+		noeud.HashReceive = bodyConvert[:]
+
+	} else {
+		if fichierInfo.Size() <= 1024 {
+			//CHUNCK
+			body := make([]byte, 0)
+			body = append(body, ChunkType)
+
+			noeud.Type = ChunkType
+			data, err := os.ReadFile(chemin)
+
+			noeud.Data = data
+			body = append(body, noeud.Data...)
+
+			bodyConvert := sha256.Sum256(body)
+			noeud.HashReceive = bodyConvert[:]
+
+			if err != nil {
+				fmt.Println("Chunck generation failed", err)
+			}
+
+		} else {
+			noeud.Type = BigFileType
+			data, err := os.ReadFile(chemin)
+			if err != nil {
+				return nil, err
+			}
+
+			nbfilsChuck := len(data)/ChunkSize + 1
+
+			if nbfilsChuck > 32 {
+
+				body := make([]byte, 0)
+				body = append(body, BigFileType)
+
+				var tabTempoNoeud []*Noeud
+
+				nbfils := nbfilsChuck/32 + 1
+
+				for i := 0; i < nbfils; i++ {
+					noeudCreate := &Noeud{Type: BigFileType, Data: make([]byte, 0), Fils: make([]*Noeud, 0), ID: i}
+					tabTempoNoeud = append(tabTempoNoeud, noeudCreate)
+					noeud.Fils = append(noeud.Fils, noeudCreate)
+				}
+
+				poseCounter := 0
+				position := 0
+
+				chunckSaveForDad := make([]byte, 0)
+				chunckSaveForDad = append(chunckSaveForDad, BigFileType)
+				for i := 0; i < len(data); i += ChunkSize {
+					fin := i + ChunkSize
+					if fin > len(data) {
+						fin = len(data)
+					}
+
+					chunck := sha256.Sum256(data[i:fin])
+					fmt.Println(position, "et ", len(tabTempoNoeud))
+					tabTempoNoeud[position].Fils = append(tabTempoNoeud[position].Fils, &Noeud{
+						Type:        ChunkType,
+						Data:        data[i:fin],
+						HashReceive: chunck[:],
+						ID:          i / ChunkSize,
+					})
+
+					chunckSaveForDad = append(chunckSaveForDad, chunck[:]...)
+
+					if poseCounter == 32 {
+						bigfile := sha256.Sum256(chunckSaveForDad)
+						tabTempoNoeud[position].HashReceive = bigfile[:]
+
+						chunckSaveForDad = make([]byte, 0)
+						chunckSaveForDad = append(chunckSaveForDad, BigFileType)
+
+						poseCounter = 0
+						position = position + 1
+					}
+
+					if position == nbfils-1 {
+						bigfile := sha256.Sum256(chunckSaveForDad)
+						tabTempoNoeud[position].HashReceive = bigfile[:]
+					}
+
+					poseCounter = poseCounter + 1
+				}
+
+				bigFileLast := make([]byte, 0)
+				bigFileLast = append(bigFileLast, BigFileType)
+
+				for i := 0; i < len(tabTempoNoeud); i += 1 {
+					hash := tabTempoNoeud[i].HashReceive
+					bigFileLast = append(bigFileLast, hash...)
+				}
+
+				bodyConvertBigFile := sha256.Sum256(bigFileLast)
+				noeud.HashReceive = bodyConvertBigFile[:]
+
+			} else {
+				body := make([]byte, 0)
+				body = append(body, BigFileType)
+
+				for i := 0; i < len(data); i += ChunkSize {
+					fin := i + ChunkSize
+					if fin > len(data) {
+						fin = len(data)
+					}
+					chunckBody := make([]byte, 0)
+					chunckBody = append(chunckBody, ChunkType)
+					chunckBody = append(chunckBody, data[i:fin]...)
+
+					bodyConvert := sha256.Sum256(chunckBody)
+
+					noeud.Fils = append(noeud.Fils, &Noeud{
+						Type:        ChunkType,
+						Data:        data[i:fin],
+						HashReceive: bodyConvert[:],
+						ID:          i / ChunkSize,
+					})
+
+					body = append(body, bodyConvert[:]...)
+
+				}
+				bodyConvert := sha256.Sum256(body)
+				noeud.HashReceive = bodyConvert[:]
+			}
+		}
+	}
+	return noeud, nil
 }
 
 func ParcourirRepertoire(chemin string) (*Noeud, error) {
