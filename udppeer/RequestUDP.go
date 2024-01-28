@@ -48,9 +48,6 @@ func receiveRequest(connexion *net.UDPConn, receiveStruct RequestUDPExtension) {
 		fmt.Print("Paquet Error: ", string(receiveStruct.Body))
 		return
 	}
-
-	fmt.Println(IP_ADRESS_SEND)
-
 	go SendUdpRequest(connexion, requestTOSend, IP_ADRESS_SEND, GetName(requestTOSend.Type))
 }
 
@@ -78,8 +75,6 @@ func requestGetDatumReply(connexion *net.UDPConn, receiveStruct RequestUDPExtens
 		go SendUdpRequest(connexion, requestDatum, IP_ADRESS_SEND, "NO DATUM")
 		return
 	}
-
-	fmt.Println(currentNode.NAME, currentNode.Type, currentNode.ID)
 
 	body := make([]byte, 0)
 	body = append(body, currentNode.HashReceive...)

@@ -1,13 +1,8 @@
 package udppeer
 
 import (
-	"fmt"
 	"math/rand"
-	"net"
-	. "projet-protocoles-internet/Tools"
-	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/cryptographie"
-	"time"
 )
 
 type RequestUDPExtension struct {
@@ -95,50 +90,4 @@ func StructToBytes(message RequestUDPExtension) []byte {
 		}
 	}
 	return buffer
-}
-
-var SendCounter int = 0
-var ReceiveCounter int = 0
-
-func SendUdpRequest(connUdp *net.UDPConn, RequestUDP RequestUDPExtension, adressPort string, from string) {
-	globalID += 1
-	structToBytes := StructToBytes(RequestUDP)
-	udpAddr, _ := net.ResolveUDPAddr("udp", adressPort)
-
-	time.Sleep(time.Millisecond * 50)
-
-	_, _ = connUdp.WriteToUDP(structToBytes, udpAddr)
-
-	if RequestUDP.Type < 128 && RequestUDP.Type != 0 && RequestUDP.Type != 1 {
-		var TimeRequestUDP RequestTime
-		TimeRequestUDP.REQUEST = RequestUDP
-		TimeRequestUDP.TIME = time.Now().UnixMilli()
-		RequestTimes.Store(RequestUDP.Id, TimeRequestUDP)
-	}
-
-	PrintRequest(RequestUDP, "SEND: "+from)
-}
-
-func MaintainConnexion(connUdp *net.UDPConn, ServeurPeer restpeer.PeersUser) {
-	for tick := range time.Tick(30 * time.Second) {
-		byteName := make([]byte, 4)
-		byteName[0] = 0
-		byteName[1] = 0
-		byteName[2] = 0
-		byteName[3] = 0
-		byteName = append(byteName, []byte(Name)...)
-		SendUdpRequest(connUdp, NewRequestUDPExtensionSigned(GetGlobalID(), HelloRequest, int16(len(byteName)), byteName), ServeurPeer.ListOfAddresses[0], "MaintainConnexion")
-		fmt.Println(tick, "maintien de la connexion avec le serveur")
-	}
-}
-
-func PrintRequest(requestUdp RequestUDPExtension, status string) {
-	if DebugPrint {
-		fmt.Println("                 ", status)
-		fmt.Println("ID :", requestUdp.Id)
-		fmt.Println("TYPE :", GetName(requestUdp.Type), "(", requestUdp.Type, ")")
-		fmt.Printf("NAME : %20.s %d\n", string(requestUdp.Body), len(requestUdp.Body))
-		fmt.Println("LENGTH :", requestUdp.Length)
-		fmt.Println("                 ")
-	}
 }

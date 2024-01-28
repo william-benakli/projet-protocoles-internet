@@ -10,11 +10,13 @@ import (
 var ClientRestAPI *http.Client
 var ConnUDP = SetListen(rand.Intn(45000) + 3000)
 
+/* Valeur par defaut */
 var Name = "MOOON"
 var IP_ADRESS = "81.194.27.155:8443"
 var IP_ADRESS_SEND = "81.194.27.155:8443"
 
-var WantBigFile bool = true
+var WantBigFile bool = false
+var DLALL bool = true
 
 /* EDIT VALUE */
 
@@ -82,6 +84,5 @@ const (
 
 /* CONSTANT VALUE */
 
-const REMISSION = 3
-const TempsRemissionMiliSeconde = 2
 const ChunkSize = 1024
+const MaxTentative = 5

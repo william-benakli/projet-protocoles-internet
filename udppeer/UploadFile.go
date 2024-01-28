@@ -11,8 +11,6 @@ func InitRoot() {
 	Racine.Type = 2
 	Racine, _ = arbre.ParcourirRepertoire2("tmp/user")
 	arbre.AfficherArbre(Racine, 0)
-	//arbre.BuildImage(Racine, "tmp/peers/")
-
 }
 
 func GetRacine() *arbre.Noeud {

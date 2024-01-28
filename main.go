@@ -38,7 +38,7 @@ func main() {
 	if err := os.MkdirAll("tmp/user/", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-	ShowDebug()
+	//ShowDebug()
 	udppeer.InitId()
 	fmt.Println("Connexion REST API terminée")
 	channel := make(chan RequestUDPExtension)

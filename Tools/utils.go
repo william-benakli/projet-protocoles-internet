@@ -9,7 +9,7 @@ import (
 
 /* DEBUG */
 
-var DebugPrint bool = true
+var DebugPrint bool = false
 
 func PrintDebug(messages ...any) {
 	if DebugPrint {

@@ -16,6 +16,7 @@ import (
 	"projet-protocoles-internet/restpeer"
 	"projet-protocoles-internet/udppeer/arbre"
 	"projet-protocoles-internet/udppeer/cryptographie"
+	"time"
 )
 
 import . "projet-protocoles-internet/udppeer"
@@ -151,6 +152,7 @@ func PageUser() {
 
 	retour := widget.NewButton("Retour", func() {
 		path = "tmp/peers/"
+		//ResetRoot()
 		PageMain()
 	})
 
@@ -161,7 +163,7 @@ func PageUser() {
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
-	Root := widget.NewButton("Envoyer Root", func() {
+	RootT := widget.NewButton("Envoyer Root", func() {
 		rq := NewRequestUDPExtensionSigned(GetGlobalID()+1, RootRequest, int16(len(GetRacine().HashReceive)), GetRacine().HashReceive)
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
@@ -182,18 +184,26 @@ func PageUser() {
 		SendUdpRequest(ConnUDP, rq, IP_ADRESS, "MAIN")
 	})
 
-	butonDownload := widget.NewButton("Telecharger", func() {
+	butonDownload := widget.NewButton("Tout télécharger", func() {
+		fmt.Println("telechargement en cours... : ", userClicked)
+		downloadFile(ConnUDP)
+	})
+
+	butonDownloadRacine := widget.NewButton("Télécharger racine", func() {
+		DLALL = true
 		fmt.Println("telechargement en cours... : ", userClicked)
 		downloadFile(ConnUDP)
 	})
 
 	butonDownloadFileOnDisk := widget.NewButton("Mettre à jour les fichiers", func() {
 		fmt.Println("telechargement en cours ", userClicked)
-		arbre.BuildImage(GetRoot(), "tmp/peers/"+userClicked)
+		CheckChunck(arbre.GetRoot())
+		time.Sleep(time.Millisecond * 400)
+		arbre.BuildImage(&arbre.Root, "tmp/peers/"+userClicked)
 	})
 
 	printTree := widget.NewButton("Afficher arbre", func() {
-		arbre.AfficherArbre(GetRoot(), 0)
+		arbre.AfficherArbre(&arbre.Root, 0)
 	})
 
 	fileList := widget.NewList(
@@ -228,10 +238,11 @@ func PageUser() {
 
 	lefter := container.NewVBox(
 		Hello,
-		Root,
+		RootT,
 		PublicKey,
 		noOP,
 		layout.NewSpacer(),
+		butonDownloadRacine,
 		butonDownload,
 		printTree,
 		butonDownloadFileOnDisk,
@@ -256,7 +267,7 @@ func downloadFile(connexion *net.UDPConn) {
 		return
 	}
 
-	requestDatum := NewRequestUDPExtension(GetGlobalID(), GetDatumRequest, int16(len(rootKey)), rootKey)
+	requestDatum := NewRequestUDPExtension(GetGlobalID()+1, GetDatumRequest, int16(len(rootKey)), rootKey)
 	go SendUdpRequest(connexion, requestDatum, IP_ADRESS, "DATUM")
 }
 
